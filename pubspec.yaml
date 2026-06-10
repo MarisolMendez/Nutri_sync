@@ -1,0 +1,58 @@
+name: nutri_sync
+description: "A new Flutter project."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+
+  # State management
+  flutter_riverpod: ^3.3.1
+
+  # Navegación
+  go_router: ^17.3.0
+
+  # Base de datos local
+  drift: ^2.14.1
+  sqlite3_flutter_libs: ^0.5.18
+  path_provider: ^2.1.2
+  path: ^1.9.0
+
+  # Red
+  dio: ^5.4.1
+  connectivity_plus: ^7.1.1
+
+  # Inyección de dependencias
+  get_it: ^7.6.7
+
+  # Either / manejo funcional de errores
+  dartz: ^0.10.1
+
+  # Utilidades
+  equatable: ^2.0.5
+  intl: ^0.19.0
+  shared_preferences: ^2.2.2
+
+  # Firebase
+  firebase_core: ^3.6.0
+  firebase_auth: ^5.3.1
+  cloud_firestore: ^5.4.4
+
+  # UI
+  cached_network_image: ^3.3.1
+  google_fonts: ^6.2.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  build_runner: ^2.4.8
+  drift_dev: ^2.14.1
+
+flutter:
+  uses-material-design: true
