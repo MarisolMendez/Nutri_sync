@@ -69,53 +69,59 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ),
 
           SafeArea(
-            child: Column(
-              children: [
-                // Flecha atrás
-                Align(
-                  alignment: Alignment.topLeft,
-                  child: IconButton(
-                    icon: const Icon(Icons.arrow_back,
-                        color: Colors.white),
-                    onPressed: () => context.pop(),
-                  ),
-                ),
-
-                // Título sobre el fondo
-                const SizedBox(height: 8),
-                const Text(
-                  'Bienvenido',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 28,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Inicia sesión para continuar',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: 28),
-
-                // Card formulario
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 28),
-                  child: Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
+            child: SingleChildScrollView(
+              padding: EdgeInsets.only(
+                left: 0,
+                right: 0,
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+              ),
+              child: Column(
+                children: [
+                  // Flecha atrás
+                  Align(
+                    alignment: Alignment.topLeft,
+                    child: IconButton(
+                      icon: const Icon(Icons.arrow_back,
+                          color: Colors.white),
+                      onPressed: () => context.pop(),
                     ),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
+                  ),
+
+                  // Título sobre el fondo
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Bienvenido',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 28,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Inicia sesión para continuar',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+
+                  // Card formulario
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 28),
+                    child: Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
                           // E-mail label
                           Text(
                             'E-mail',
@@ -234,6 +240,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ],
             ),
           ),
+        ),
         ],
       ),
     );

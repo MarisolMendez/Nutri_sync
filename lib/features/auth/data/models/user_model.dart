@@ -53,4 +53,34 @@ class UserModel extends UserEntity {
       createdAt: data.createdAt,
     );
   }
+
+  /// Desde SharedPreferences
+  factory UserModel.fromJson(Map<String, dynamic> json) {
+    return UserModel(
+      id: json['id'] as String? ?? '',
+      email: json['email'] as String? ?? '',
+      name: json['name'] as String? ?? '',
+      photoUrl: json['photoUrl'] as String?,
+      weightKg: (json['weightKg'] as num?)?.toDouble(),
+      heightCm: (json['heightCm'] as num?)?.toDouble(),
+      dailyWaterGoalMl: json['dailyWaterGoalMl'] is num
+          ? (json['dailyWaterGoalMl'] as num).toInt()
+          : 2000,
+      createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+          DateTime.now(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'email': email,
+      'name': name,
+      'photoUrl': photoUrl,
+      'weightKg': weightKg,
+      'heightCm': heightCm,
+      'dailyWaterGoalMl': dailyWaterGoalMl,
+      'createdAt': createdAt.toIso8601String(),
+    };
+  }
 }

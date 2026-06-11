@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/di/providers.dart';
 import 'core/router/app_router.dart';
-import 'core/sync/sync_manager.dart';
 import 'core/theme/app_theme.dart';
 import 'firebase_options.dart';
 
@@ -17,29 +16,13 @@ Future<void> bootstrap() async {
 
   await initDependencies();
 
-Future<void> bootstrap() async {
-  WidgetsFlutterBinding.ensureInitialized();
-
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-
-  await initDependencies();
-
-  // sl<SyncManager>().init();  // 
-
   runApp(
     const ProviderScope(
       child: NutriSyncApp(),
     ),
   );
 }
-  runApp(
-    const ProviderScope(
-      child: NutriSyncApp(),
-    ),
-  );
-}
+
 
 class NutriSyncApp extends StatelessWidget {
   const NutriSyncApp({super.key});
