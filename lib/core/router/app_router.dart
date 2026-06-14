@@ -9,7 +9,7 @@ import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
 import '../../features/hydration/presentation/screens/hydration_screen.dart';
 import '../../features/mood/presentation/screen/mood_screen.dart';
 
-// import '../../features/meal_plan/presentation/screens/weekly_meal_plan_screen.dart';
+import '../../features/meal_plan/presentation/screens/weekly_meal_plan_screen.dart';
 import '../../features/medication/presentation/screens/medication_screen.dart';
 
 abstract class AppRouter {
@@ -44,10 +44,10 @@ abstract class AppRouter {
   builder: (context, state) => const MoodScreen(),
 ),
 
-      // GoRoute(
-      //   path: '/meal-plan',
-      //   builder: (context, state) => const WeeklyMealPlanScreen(),
-      // ),
+      GoRoute(
+        path: '/meal-plan',
+        builder: (context, state) => const WeeklyMealPlanScreen(),
+      ),
       GoRoute(
         path: '/medication',
         builder: (context, state) => const MedicationScreen(),

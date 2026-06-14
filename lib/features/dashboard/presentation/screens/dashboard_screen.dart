@@ -27,6 +27,11 @@ class DashboardScreen extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             ElevatedButton(
+              onPressed: () => context.push('/meal-plan'),
+              child: const Text('Ver Plan de Comidas'),
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton(
               onPressed: () => context.push('/medication'),
               child: const Text('Ver Medicación'),
             ),
