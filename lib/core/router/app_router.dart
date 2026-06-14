@@ -10,7 +10,7 @@ import '../../features/hydration/presentation/screens/hydration_screen.dart';
 import '../../features/mood/presentation/screen/mood_screen.dart';
 
 // import '../../features/meal_plan/presentation/screens/weekly_meal_plan_screen.dart';
-// import '../../features/medication/presentation/screens/medication_screen.dart';
+import '../../features/medication/presentation/screens/medication_screen.dart';
 
 abstract class AppRouter {
   static final router = GoRouter(
@@ -48,10 +48,10 @@ abstract class AppRouter {
       //   path: '/meal-plan',
       //   builder: (context, state) => const WeeklyMealPlanScreen(),
       // ),
-      // GoRoute(
-      //   path: '/medication',
-      //   builder: (context, state) => const MedicationScreen(),
-      // ),
+      GoRoute(
+        path: '/medication',
+        builder: (context, state) => const MedicationScreen(),
+      ),
     ],
   );
 }

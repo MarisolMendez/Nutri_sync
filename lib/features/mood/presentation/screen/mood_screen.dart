@@ -345,7 +345,7 @@ class _MoodOption extends StatelessWidget {
                   ? Border.all(color: NutriColors.primary, width: 2)
                   : Border.all(color: Colors.transparent),
               color: isSelected
-                  ? NutriColors.primary.withOpacity(0.08)
+                  ? NutriColors.primary.withValues(alpha: 0.08)
                   : Colors.transparent,
             ),
             child: Center(
@@ -403,7 +403,7 @@ class _WeekMoodRow extends StatelessWidget {
                     ? Border.all(color: NutriColors.primary, width: 1.5)
                     : null,
                 color: isToday
-                    ? NutriColors.primary.withOpacity(0.05)
+                    ? NutriColors.primary.withValues(alpha: 0.05)
                     : Colors.transparent,
               ),
               child: Center(

@@ -40,14 +40,11 @@ import '../../features/meal_plan/domain/usecases/update_meal_usecase.dart';
 import '../../features/meal_plan/domain/usecases/sync_meal_plans_usecase.dart';
 */
 
-/*
 import '../../features/medication/data/datasources/medication_local_datasource.dart';
-import '../../features/medication/data/datasources/medication_remote_datasource.dart';
 import '../../features/medication/data/repositories/medication_repository_impl.dart';
 import '../../features/medication/domain/repositories/medication_repository.dart';
 import '../../features/medication/domain/usecases/log_medication_usecase.dart';
 import '../../features/medication/domain/usecases/get_medication_schedule_usecase.dart';
-*//////*/
 /// Instancia global de GetIt — se accede con sl ´Tipo´() desde cualquier parte.
 /// "sl" = service locator
 final sl = GetIt.instance;
@@ -60,7 +57,7 @@ Future<void> initDependencies() async {
   await _initHydration();
   await _initMood();
   // await _initMealPlan();
-  // await _initMedication();
+  await _initMedication();
 }
 
 // ── CORE ──────────────────────────────────────────────────────────────────────
@@ -171,21 +168,15 @@ Future<void> _initMood() async {
 }
 
 // ── MEDICATION ────────────────────────────────────────────────────────────────
-// Future<void> _initMedication() async {
-//   sl.registerLazySingleton<MedicationLocalDatasource>(
-//     () => MedicationLocalDatasourceImpl(medicationDao: sl()),
-//   );
-//   sl.registerLazySingleton<MedicationRemoteDatasource>(
-//     () => MedicationRemoteDatasourceImpl(firestore: sl()),
-//   );
-//   sl.registerLazySingleton<MedicationRepository>(
-//     () => MedicationRepositoryImpl(
-//       localDatasource: sl(),
-//       remoteDatasource: sl(),
-//       networkInfo: sl(),
-//       syncManager: sl(),
-//     ),
-//   );
-//   sl.registerLazySingleton(() => LogMedicationUseCase(sl()));
-//   sl.registerLazySingleton(() => GetMedicationScheduleUseCase(sl()));
-// }
+Future<void> _initMedication() async {
+  sl.registerLazySingleton<MedicationLocalDatasource>(
+    () => MedicationLocalDatasourceImpl(medicationDao: sl()),
+  );
+  sl.registerLazySingleton<MedicationRepository>(
+    () => MedicationRepositoryImpl(
+      localDatasource: sl(),
+    ),
+  );
+  sl.registerLazySingleton(() => LogMedicationUseCase(sl()));
+  sl.registerLazySingleton(() => GetMedicationScheduleUseCase(sl()));
+}

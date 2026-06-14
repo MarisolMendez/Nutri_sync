@@ -263,7 +263,7 @@ class _HydrationContent extends StatelessWidget {
               activeTrackColor: NutriColors.primary,
               inactiveTrackColor: NutriColors.border,
               thumbColor: NutriColors.primary,
-              overlayColor: NutriColors.primary.withOpacity(0.1),
+              overlayColor: NutriColors.primary.withValues(alpha: 0.1),
               trackHeight: 4,
             ),
             child: Slider(
@@ -330,7 +330,7 @@ class _QuickAddButton extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
             color: isSelected
-                ? NutriColors.primary.withOpacity(0.1)
+                ? NutriColors.primary.withValues(alpha: 0.1)
                 : const Color(0xFFEAF0F5),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(

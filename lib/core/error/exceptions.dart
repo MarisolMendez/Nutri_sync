@@ -1,6 +1,7 @@
 /// Las excepciones viven SOLO en la capa data.
 /// Los repositorios las atrapan y las convierten en [Failure].
 /// El domain y presentation NUNCA ven excepciones — solo ven Failure.
+library;
 
 // ── Excepciones de red ────────────────────────────────────────────────────────
 
