@@ -39,6 +39,10 @@ class MealPlanController extends Notifier<MealPlanState> {
   }
 
   Future<void> load() async {
+    final previousDay = state is MealPlanLoaded
+        ? (state as MealPlanLoaded).selectedDay
+        : DateTime.now().weekday;
+
     state = const MealPlanLoading();
 
     // Lunes de la semana actual
@@ -58,7 +62,7 @@ class MealPlanController extends Notifier<MealPlanState> {
         } else {
           state = MealPlanLoaded(
             plan: plan,
-            selectedDay: now.weekday, // Día actual seleccionado
+            selectedDay: previousDay, // Preserva el día seleccionado
           );
         }
       },

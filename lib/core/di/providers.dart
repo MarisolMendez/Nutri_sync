@@ -7,6 +7,7 @@ import 'package:get_it/get_it.dart';
 import '../database/app_database.dart';
 import '../database/daos/hydration_dao.dart';
 import '../database/daos/meal_dao.dart';
+import '../database/daos/medication_dao.dart';
 import '../database/daos/mood_dao.dart';
 import '../network/network_info.dart';
 
@@ -81,7 +82,7 @@ Future<void> _initCore() async {
   sl.registerLazySingleton(() => MealDao(sl<AppDatabase>()));
   sl.registerLazySingleton(() => HydrationDao(sl<AppDatabase>()));
   sl.registerLazySingleton(() => MoodDao(sl<AppDatabase>()));
-  // sl.registerLazySingleton(() => MedicationDao(sl<AppDatabase>()));
+  sl.registerLazySingleton(() => MedicationDao(sl<AppDatabase>()));
   // sl.registerLazySingleton(() => SyncQueueDao(sl<AppDatabase>()));
 
   // ApiClient — Dio configurado con interceptores

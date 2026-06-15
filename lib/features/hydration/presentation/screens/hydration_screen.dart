@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../controllers/hydration_controller.dart';
 import '../controllers/hydration_state.dart';
@@ -30,7 +31,7 @@ class _HydrationScreenState extends ConsumerState<HydrationScreen> {
         title: const Text('Hidratación'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => context.go('/dashboard'),
         ),
       ),
       backgroundColor: NutriColors.background,
@@ -44,7 +45,7 @@ class _HydrationScreenState extends ConsumerState<HydrationScreen> {
             summary: summary,
             customAmountMl: customAmountMl,
             onQuickAdd: (ml) =>
-                ref.read(hydrationControllerProvider.notifier).addWater(ml),
+                ref.read(hydrationControllerProvider.notifier).updateCustomAmount(ml),
             onCustomAmountChanged: (ml) => ref
                 .read(hydrationControllerProvider.notifier)
                 .updateCustomAmount(ml),
@@ -120,88 +121,90 @@ class _HydrationContent extends StatelessWidget {
           const SizedBox(height: 16),
 
           // ── Círculo de progreso ────────────────────────────────────
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: NutriColors.surface,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: NutriColors.border),
-            ),
-            child: Column(
-              children: [
-                SizedBox(
-                  height: 180,
-                  width: 180,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      // Círculo de progreso
-                      CustomPaint(
-                        size: const Size(180, 180),
-                        painter: _CircleProgressPainter(
-                          progress: summary.progressPercent,
-                        ),
-                      ),
-                      // Contenido central
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.local_drink_outlined,
-                            color: NutriColors.hydration,
-                            size: 28,
+          Center(
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: NutriColors.surface,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: NutriColors.border),
+              ),
+              child: Column(
+                children: [
+                  SizedBox(
+                    height: 180,
+                    width: 180,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        // Círculo de progreso
+                        CustomPaint(
+                          size: const Size(180, 180),
+                          painter: _CircleProgressPainter(
+                            progress: summary.progressPercent,
                           ),
-                          const SizedBox(height: 4),
-                          RichText(
-                            text: TextSpan(
-                              children: [
-                                TextSpan(
-                                  text: '${summary.totalMl}',
-                                  style: const TextStyle(
-                                    fontSize: 32,
-                                    fontWeight: FontWeight.w700,
-                                    color: NutriColors.textPrimary,
-                                  ),
-                                ),
-                                const TextSpan(
-                                  text: ' ml',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: NutriColors.textSecondary,
-                                  ),
-                                ),
-                              ],
+                        ),
+                        // Contenido central
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.local_drink_outlined,
+                              color: NutriColors.hydration,
+                              size: 28,
                             ),
-                          ),
-                          Text(
-                            'Meta: ${summary.goalMl}ml',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(color: NutriColors.textSecondary),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-                // Vasos completados
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: NutriColors.background,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    '${summary.totalGlasses} de ${summary.goalGlasses} vasos completados',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w500,
+                            const SizedBox(height: 4),
+                            RichText(
+                              text: TextSpan(
+                                children: [
+                                  TextSpan(
+                                    text: '${summary.totalMl}',
+                                    style: const TextStyle(
+                                      fontSize: 32,
+                                      fontWeight: FontWeight.w700,
+                                      color: NutriColors.textPrimary,
+                                    ),
+                                  ),
+                                  const TextSpan(
+                                    text: ' ml',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: NutriColors.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Text(
+                              'Meta: ${summary.goalMl}ml',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(color: NutriColors.textSecondary),
+                            ),
+                          ],
                         ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 16),
+                  // Vasos completados
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: NutriColors.background,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      '${summary.totalGlasses} de ${summary.goalGlasses} vasos completados',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w500,
+                          ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 20),

@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 import 'core/database/app_database.dart';
 import 'core/database/seed_data.dart';
@@ -11,6 +12,7 @@ import 'firebase_options.dart';
 
 Future<void> bootstrap() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('es', null);
 
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,

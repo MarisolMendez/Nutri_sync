@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../controllers/medication_controller.dart';
-import '../controllers/medication_state.dart';
 
 class MedicationScreen extends ConsumerStatefulWidget {
   const MedicationScreen({super.key});
@@ -62,7 +62,7 @@ class _MedicationScreenState extends ConsumerState<MedicationScreen> {
         title: const Text('Medicación'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).maybePop(),
+          onPressed: () => context.go('/dashboard'),
         ),
       ),
       backgroundColor: NutriColors.background,
