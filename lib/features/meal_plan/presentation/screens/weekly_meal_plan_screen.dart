@@ -7,6 +7,7 @@ import '../../domain/entities/meal_plan_entities.dart';
 import '../controllers/meal_plan_controller.dart';
 import '../controllers/meal_plan_state.dart';
 import 'recipe_detail_screen.dart';
+import '../widgets/voice_note_recorder.dart';
 
 class WeeklyMealPlanScreen extends ConsumerStatefulWidget {
   const WeeklyMealPlanScreen({super.key});
@@ -157,6 +158,7 @@ class _MealCard extends ConsumerStatefulWidget {
 class _MealCardState extends ConsumerState<_MealCard> {
   bool _expanded = false;
   final _noteController = TextEditingController();
+  String? _voiceNotePath;
 
   static const _colorGray = Color(0xFF747571);
   static const _colorTextGreenDark = Color(0xFF052016);
@@ -319,6 +321,12 @@ class _MealCardState extends ConsumerState<_MealCard> {
                     decoration: const InputDecoration(
                       hintText: 'Ej: He cambiado el salmón por atún...',
                     ),
+                  ),
+                  const SizedBox(height: 8),
+                  VoiceNoteRecorder(
+                    onRecorded: (path) {
+                      _voiceNotePath = path;
+                    },
                   ),
                   const SizedBox(height: 8),
                   ElevatedButton.icon(
