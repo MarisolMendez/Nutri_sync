@@ -34,6 +34,19 @@ class MedicationDao extends DatabaseAccessor<AppDatabase>
         .get();
   }
 
+  /// IDs de medicamentos ya marcados como tomados hoy
+  Future<Set<int>> getTodayTakenIds() async {
+    final now = DateTime.now();
+    final start = DateTime(now.year, now.month, now.day);
+    final end = start.add(const Duration(days: 1));
+    final logs = await (select(medicationLogsTable)
+          ..where((l) =>
+              l.takenAt.isBiggerOrEqualValue(start) &
+              l.takenAt.isSmallerThanValue(end)))
+        .get();
+    return logs.map((l) => l.medicationId).toSet();
+  }
+
   Future<void> insertLog(MedicationLogsTableCompanion log) =>
       into(medicationLogsTable).insert(log);
 

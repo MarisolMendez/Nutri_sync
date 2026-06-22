@@ -9,6 +9,7 @@ import '../database/daos/hydration_dao.dart';
 import '../database/daos/meal_dao.dart';
 import '../database/daos/medication_dao.dart';
 import '../database/daos/mood_dao.dart';
+import '../database/daos/user_dao.dart';
 import '../network/network_info.dart';
 
 // ── Features ──────────────────────────────────────────────────────────────────
@@ -44,7 +45,19 @@ import '../../features/medication/data/datasources/medication_local_datasource.d
 import '../../features/medication/data/repositories/medication_repository_impl.dart';
 import '../../features/medication/domain/repositories/medication_repository.dart';
 import '../../features/medication/domain/usecases/log_medication_usecase.dart';
+import '../../features/medication/domain/usecases/log_medication_taken_usecase.dart';
 import '../../features/medication/domain/usecases/get_medication_schedule_usecase.dart';
+
+import '../../features/profile/data/datasources/profile_local_datasource.dart';
+import '../../features/profile/data/repositories/profile_repository_impl.dart';
+import '../../features/profile/domain/repositories/profile_repository.dart';
+import '../../features/profile/domain/usecases/get_profile_usecase.dart';
+import '../../features/profile/domain/usecases/update_profile_usecase.dart';
+
+import '../../features/progress/data/repositories/progress_repository_impl.dart';
+import '../../features/progress/domain/repositories/progress_repository.dart';
+import '../../features/progress/domain/usecases/get_weekly_progress_usecase.dart';
+
 /// Instancia global de GetIt — se accede con sl ´Tipo´() desde cualquier parte.
 /// "sl" = service locator
 final sl = GetIt.instance;
@@ -58,6 +71,8 @@ Future<void> initDependencies() async {
   await _initMood();
   await _initMealPlan();
   await _initMedication();
+  await _initProfile();
+  await _initProgress();
 }
 
 // ── CORE ──────────────────────────────────────────────────────────────────────
@@ -78,7 +93,7 @@ Future<void> _initCore() async {
   sl.registerLazySingleton(() => AppDatabase());
 
   // DAOs — dependen de AppDatabase
-  // sl.registerLazySingleton(() => UserDao(sl<AppDatabase>()));
+  sl.registerLazySingleton(() => UserDao(sl<AppDatabase>()));
   sl.registerLazySingleton(() => MealDao(sl<AppDatabase>()));
   sl.registerLazySingleton(() => HydrationDao(sl<AppDatabase>()));
   sl.registerLazySingleton(() => MoodDao(sl<AppDatabase>()));
@@ -177,5 +192,33 @@ Future<void> _initMedication() async {
     ),
   );
   sl.registerLazySingleton(() => LogMedicationUseCase(sl()));
+  sl.registerLazySingleton(() => LogMedicationTakenUseCase(sl()));
   sl.registerLazySingleton(() => GetMedicationScheduleUseCase(sl()));
+}
+
+// ── PROFILE ───────────────────────────────────────────────────────────────
+Future<void> _initProfile() async {
+  sl.registerLazySingleton<ProfileLocalDatasource>(
+    () => ProfileLocalDatasourceImpl(userDao: sl()),
+  );
+  sl.registerLazySingleton<ProfileRepository>(
+    () => ProfileRepositoryImpl(
+      localDatasource: sl(),
+    ),
+  );
+  sl.registerLazySingleton(() => GetProfileUseCase(sl()));
+  sl.registerLazySingleton(() => UpdateProfileUseCase(sl()));
+}
+
+// ── PROGRESS ───────────────────────────────────────────────────────────────
+Future<void> _initProgress() async {
+  sl.registerLazySingleton<ProgressRepository>(
+    () => ProgressRepositoryImpl(
+      mealDao: sl(),
+      hydrationDao: sl(),
+      moodDao: sl(),
+      medicationDao: sl(),
+    ),
+  );
+  sl.registerLazySingleton(() => GetWeeklyProgressUseCase(sl()));
 }

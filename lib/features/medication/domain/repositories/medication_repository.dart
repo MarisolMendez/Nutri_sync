@@ -24,4 +24,6 @@ abstract class MedicationRepository {
   Future<Either<Failure, void>> logMedicationTaken({
     required int medicationId,
   });
+
+  Future<Either<Failure, Set<int>>> getTodayTakenIds();
 }

@@ -34,7 +34,7 @@ class _WeeklyMealPlanScreenState extends ConsumerState<WeeklyMealPlanScreen> {
         title: const Text('Mi Dieta'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/dashboard'),
+          onPressed: () => Navigator.of(context).pop(),
         ),
       ),
       backgroundColor: NutriColors.background,

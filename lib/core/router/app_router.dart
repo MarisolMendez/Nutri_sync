@@ -3,14 +3,13 @@ import '../../features/auth/presentation/screens/welcome_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 
-// TODO: importar cuando se creen los features
-import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
-
+import '../../features/dashboard/presentation/main_scaffold.dart';
 import '../../features/hydration/presentation/screens/hydration_screen.dart';
 import '../../features/mood/presentation/screen/mood_screen.dart';
 
 import '../../features/meal_plan/presentation/screens/weekly_meal_plan_screen.dart';
 import '../../features/medication/presentation/screens/medication_screen.dart';
+import '../../features/progress/presentation/screens/progress_screen.dart';
 
 abstract class AppRouter {
   static final router = GoRouter(
@@ -30,9 +29,9 @@ abstract class AppRouter {
       ),
 
      GoRoute(
-  path: '/dashboard',
-  builder: (context, state) => const DashboardScreen(),
-),
+   path: '/dashboard',
+   builder: (context, state) => const MainScaffold(),
+ ),
 
      GoRoute(
   path: '/hydration',
@@ -51,6 +50,10 @@ abstract class AppRouter {
       GoRoute(
         path: '/medication',
         builder: (context, state) => const MedicationScreen(),
+      ),
+      GoRoute(
+        path: '/progress',
+        builder: (context, state) => const ProgressScreen(),
       ),
     ],
   );

@@ -18,6 +18,7 @@ abstract class MedicationLocalDatasource {
   });
   Future<void> deleteMedication(int id);
   Future<void> logTaken(int medicationId);
+  Future<Set<int>> getTodayTakenIds();
 }
 
 class MedicationLocalDatasourceImpl implements MedicationLocalDatasource {
@@ -80,6 +81,15 @@ class MedicationLocalDatasourceImpl implements MedicationLocalDatasource {
       );
     } catch (e) {
       throw DatabaseException('Error al registrar toma: $e');
+    }
+  }
+
+  @override
+  Future<Set<int>> getTodayTakenIds() async {
+    try {
+      return await medicationDao.getTodayTakenIds();
+    } catch (e) {
+      throw DatabaseException('Error al obtener tomas de hoy: $e');
     }
   }
 }

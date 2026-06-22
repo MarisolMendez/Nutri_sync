@@ -23,6 +23,7 @@ class DashboardLoaded extends DashboardState {
   final List<MealEntity> todayMeals;
   final List<MedicationEntity> medications;
   final MoodEntity? todayMood;
+  final Set<int> takenMedicationIds;
   final DateTime date;
 
   const DashboardLoaded({
@@ -30,6 +31,7 @@ class DashboardLoaded extends DashboardState {
     required this.todayMeals,
     required this.medications,
     this.todayMood,
+    this.takenMedicationIds = const {},
     required this.date,
   });
 
@@ -39,6 +41,7 @@ class DashboardLoaded extends DashboardState {
         todayMeals,
         medications,
         todayMood,
+        takenMedicationIds,
         date,
       ];
 }

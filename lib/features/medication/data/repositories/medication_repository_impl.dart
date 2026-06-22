@@ -76,4 +76,16 @@ class MedicationRepositoryImpl implements MedicationRepository {
       return Left(UnexpectedFailure(e.toString()));
     }
   }
+
+  @override
+  Future<Either<Failure, Set<int>>> getTodayTakenIds() async {
+    try {
+      final ids = await localDatasource.getTodayTakenIds();
+      return Right(ids);
+    } on DatabaseException catch (e) {
+      return Left(DatabaseFailure(e.message));
+    } catch (e) {
+      return Left(UnexpectedFailure(e.toString()));
+    }
+  }
 }

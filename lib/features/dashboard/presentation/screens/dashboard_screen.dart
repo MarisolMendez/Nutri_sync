@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../hydration/domain/entities/hydration_entity.dart';
 import '../../../meal_plan/domain/entities/meal_plan_entities.dart';
 import '../../../medication/domain/entities/medication_entity.dart';
 import '../../../mood/domain/entities/mood_entity.dart';
+import '../../../hydration/presentation/screens/hydration_screen.dart';
+import '../../../meal_plan/presentation/screens/weekly_meal_plan_screen.dart';
+import '../../../medication/presentation/screens/medication_screen.dart';
+import '../../../profile/presentation/screens/profile_screen.dart';
 import '../controllers/dashboard_controller.dart';
 import '../controllers/dashboard_state.dart';
 
@@ -36,18 +39,23 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         backgroundColor: NutriColors.primaryDark,
         title: Row(
           children: [
-            Container(
-              width: 30,
-              height: 30,
-              decoration: const BoxDecoration(
-                color: Colors.white24,
-                shape: BoxShape.circle,
+            CircleAvatar(
+              radius: 16,
+              backgroundColor: Colors.white24,
+              child: ClipOval(
+                child: Image.asset(
+                  'assets/images/nutrisync_logo.png',
+                  width: 32,
+                  height: 32,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) =>
+                      const Icon(Icons.eco, color: Colors.white, size: 18),
+                ),
               ),
-              child: const Icon(Icons.eco, color: Colors.white, size: 18),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 10),
             const Text('NutriSync',
-                style: TextStyle(color: Colors.white, fontSize: 16)),
+                style: TextStyle(color: Colors.white, fontSize: 18)),
           ],
         ),
         actions: [
@@ -55,6 +63,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             icon: const Icon(Icons.notifications_outlined, color: Colors.white),
             onPressed: () {},
           ),
+          IconButton(
+            icon: const Icon(Icons.person_outline, color: Colors.white),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => const ProfileScreen(),
+              ),
+            ),
+          ),
+          const SizedBox(width: 4),
         ],
       ),
       body: switch (state) {
@@ -103,7 +120,12 @@ class _DashboardContent extends ConsumerWidget {
             const SizedBox(height: 16),
 
             // ── Card Hidratación ────────────────────────────────────
-            _HydrationCard(hydration: state.hydration),
+            _HydrationCard(
+              hydration: state.hydration,
+              onAddTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const HydrationScreen()),
+              ),
+            ),
             const SizedBox(height: 20),
 
             // ── Sección Comidas ─────────────────────────────────────
@@ -113,7 +135,9 @@ class _DashboardContent extends ConsumerWidget {
                 Text('Comidas',
                     style: Theme.of(context).textTheme.titleLarge),
                 TextButton.icon(
-                  onPressed: () => context.go('/meal-plan'),
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const WeeklyMealPlanScreen()),
+                  ),
                   icon: const Text('Ver plan completo'),
                   label: const Icon(Icons.arrow_forward, size: 14),
                   style: TextButton.styleFrom(
@@ -162,7 +186,16 @@ class _DashboardContent extends ConsumerWidget {
             Text('Medicación',
                 style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 12),
-            _MedicationSection(medications: state.medications),
+            _MedicationSection(
+              medications: state.medications,
+              takenMedicationIds: state.takenMedicationIds,
+              onAddTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const MedicationScreen()),
+              ),
+              onToggleTaken: (medicationId) => ref
+                  .read(dashboardControllerProvider.notifier)
+                  .toggleMedicationTaken(medicationId),
+            ),
             const SizedBox(height: 20),
 
             // ── Sección Mood ────────────────────────────────────────
@@ -184,7 +217,8 @@ class _DashboardContent extends ConsumerWidget {
 
 class _HydrationCard extends StatelessWidget {
   final HydrationSummary hydration;
-  const _HydrationCard({required this.hydration});
+  final VoidCallback? onAddTap;
+  const _HydrationCard({required this.hydration, this.onAddTap});
 
   @override
   Widget build(BuildContext context) {
@@ -211,7 +245,7 @@ class _HydrationCard extends StatelessWidget {
                 ],
               ),
               TextButton(
-                onPressed: () => context.go('/hydration'),
+                onPressed: onAddTap,
                 style: TextButton.styleFrom(
                     foregroundColor: NutriColors.primary,
                     padding: EdgeInsets.zero),
@@ -524,22 +558,18 @@ class _Macro extends StatelessWidget {
 
 // ── Sección Medicación ────────────────────────────────────────────────────────
 
-class _MedicationSection extends StatefulWidget {
+class _MedicationSection extends StatelessWidget {
   final List<MedicationEntity> medications;
-  const _MedicationSection({required this.medications});
+  final Set<int> takenMedicationIds;
+  final VoidCallback? onAddTap;
+  final void Function(int medicationId)? onToggleTaken;
 
-  @override
-  State<_MedicationSection> createState() => _MedicationSectionState();
-}
-
-class _MedicationSectionState extends State<_MedicationSection> {
-  final Set<int> _checkedIds = {};
-
-  @override
-  void initState() {
-    super.initState();
-    // Inicializar con los IDs que ya están tomados (ninguno por defecto)
-  }
+  const _MedicationSection({
+    required this.medications,
+    this.takenMedicationIds = const {},
+    this.onAddTap,
+    this.onToggleTaken,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -552,7 +582,7 @@ class _MedicationSectionState extends State<_MedicationSection> {
       ),
       child: Column(
         children: [
-          if (widget.medications.isEmpty)
+          if (medications.isEmpty)
             Text(
               'Sin medicamentos configurados',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -560,22 +590,14 @@ class _MedicationSectionState extends State<_MedicationSection> {
                   ),
             )
           else
-            ...widget.medications.map(
+            ...medications.map(
               (med) => Padding(
                 padding: const EdgeInsets.only(bottom: 10),
                 child: Row(
                   children: [
                     Checkbox(
-                      value: _checkedIds.contains(med.id),
-                      onChanged: (_) {
-                        setState(() {
-                          if (_checkedIds.contains(med.id)) {
-                            _checkedIds.remove(med.id);
-                          } else {
-                            _checkedIds.add(med.id);
-                          }
-                        });
-                      },
+                      value: takenMedicationIds.contains(med.id),
+                      onChanged: (_) => onToggleTaken?.call(med.id),
                       activeColor: NutriColors.primary,
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(4)),
@@ -619,7 +641,7 @@ class _MedicationSectionState extends State<_MedicationSection> {
             ),
           const SizedBox(height: 4),
           OutlinedButton.icon(
-            onPressed: () => context.go('/medication'),
+            onPressed: onAddTap,
             icon: const Icon(Icons.add, size: 16),
             label: const Text('Añadir Medicación'),
             style: OutlinedButton.styleFrom(
@@ -688,7 +710,7 @@ class _MoodSectionState extends State<_MoodSection> {
                             ? Border.all(color: NutriColors.primary, width: 2)
                             : null,
                         color: isSelected
-                            ? NutriColors.primary.withValues(alpha: 0.08)
+                            ? NutriColors.primary.withOpacity(0.08)
                             : Colors.transparent,
                       ),
                       child: Center(
