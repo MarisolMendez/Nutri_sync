@@ -4,34 +4,34 @@ import '../../../../core/error/failures.dart';
 import '../../../../core/usecases/usecase.dart';
 import '../repositories/meal_plan_repository.dart';
 
-class UpdateMealUseCase implements UseCase<void, UpdateMealParams> {
+class SaveSubstituteNoteUseCase implements UseCase<void, SaveSubstituteNoteParams> {
   final MealPlanRepository repository;
-  const UpdateMealUseCase(this.repository);
+  const SaveSubstituteNoteUseCase(this.repository);
 
   @override
-  Future<Either<Failure, void>> call(UpdateMealParams params) {
+  Future<Either<Failure, void>> call(SaveSubstituteNoteParams params) {
     return repository.updateMealConsumed(
       mealId: params.mealId,
       consumed: params.consumed,
-      substituteNote: params.substituteNote,
+      substituteNote: params.note,
       voiceNotePath: params.voiceNotePath,
     );
   }
 }
 
-class UpdateMealParams extends Equatable {
+class SaveSubstituteNoteParams extends Equatable {
   final int mealId;
   final bool consumed;
-  final String? substituteNote;
+  final String? note;
   final String? voiceNotePath;
 
-  const UpdateMealParams({
+  const SaveSubstituteNoteParams({
     required this.mealId,
     required this.consumed,
-    this.substituteNote,
+    this.note,
     this.voiceNotePath,
   });
 
   @override
-  List<Object?> get props => [mealId, consumed, substituteNote, voiceNotePath];
+  List<Object?> get props => [mealId, consumed, note, voiceNotePath];
 }

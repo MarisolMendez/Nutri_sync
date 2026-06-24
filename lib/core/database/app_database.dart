@@ -51,15 +51,16 @@ class AppDatabase extends _$AppDatabase {
 
   /// Versión del schema — incrementar cuando se modifiquen tablas
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   /// Migraciones — cuando schemaVersion sube, Drift llama esto
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) => m.createAll(),
         onUpgrade: (m, from, to) async {
-          // Aquí irán las migraciones futuras
-          // Ejemplo: if (from < 2) await m.addColumn(table, column);
+          if (from < 2) {
+            await m.addColumn(mealsTable, mealsTable.voiceNotePath);
+          }
         },
       );
 }

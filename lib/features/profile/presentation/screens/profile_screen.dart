@@ -165,7 +165,7 @@ class _ProfileContent extends StatelessWidget {
               children: [
                 CircleAvatar(
                   radius: 40,
-                  backgroundColor: NutriColors.primary.withOpacity(0.15),
+                  backgroundColor: NutriColors.primary.withValues(alpha: 0.15),
                   child: Text(
                     profile.name.isNotEmpty
                         ? profile.name[0].toUpperCase()
@@ -205,7 +205,7 @@ class _ProfileContent extends StatelessWidget {
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: NutriColors.primary.withOpacity(0.12),
+                      color: NutriColors.primary.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(Icons.bar_chart_rounded,

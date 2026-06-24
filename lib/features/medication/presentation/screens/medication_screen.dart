@@ -62,7 +62,7 @@ class _MedicationScreenState extends ConsumerState<MedicationScreen> {
         title: const Text('Medicación'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => context.go('/dashboard'),
         ),
       ),
       backgroundColor: NutriColors.background,

@@ -3,6 +3,7 @@ import '../../../../core/di/providers.dart';
 import '../../domain/entities/meal_plan_entities.dart';
 import '../../domain/usecases/get_weekly_plan_usecase.dart';
 import '../../domain/usecases/update_meal_usecase.dart';
+import '../../domain/usecases/save_substitute_note_usecase.dart';
 import 'meal_plan_state.dart';
 
 final mealPlanControllerProvider =
@@ -28,6 +29,7 @@ final recipeDetailStateProvider =
 class MealPlanController extends Notifier<MealPlanState> {
   late final GetWeeklyPlanUseCase _getWeeklyPlan;
   late final UpdateMealUseCase _updateMeal;
+  late final SaveSubstituteNoteUseCase _saveSubstituteNote;
 
   static const _tempUserId = 'user_1';
 
@@ -35,6 +37,7 @@ class MealPlanController extends Notifier<MealPlanState> {
   MealPlanState build() {
     _getWeeklyPlan = sl();
     _updateMeal = sl();
+    _saveSubstituteNote = sl();
     return const MealPlanInitial();
   }
 

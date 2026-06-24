@@ -43,6 +43,19 @@ class MealDao extends DatabaseAccessor<AppDatabase> with _$MealDaoMixin {
       (update(mealsTable)..where((m) => m.id.equals(mealId)))
           .write(MealsTableCompanion(isConsumed: Value(consumed)));
 
+  Future<void> saveSubstituteNote({
+    required int mealId,
+    String? note,
+    String? voiceNotePath,
+  }) =>
+      (update(mealsTable)..where((m) => m.id.equals(mealId))).write(
+        MealsTableCompanion(
+          substituteNote: Value(note),
+          voiceNotePath: Value(voiceNotePath),
+          isSynced: const Value(false),
+        ),
+      );
+
   Future<RecipesTableData?> getRecipeByMealId(int mealId) =>
       (select(recipesTable)..where((r) => r.mealId.equals(mealId)))
           .getSingleOrNull();

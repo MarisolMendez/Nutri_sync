@@ -31,7 +31,7 @@ class _HydrationScreenState extends ConsumerState<HydrationScreen> {
         title: const Text('Hidratación'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => context.go('/dashboard'),
         ),
       ),
       backgroundColor: NutriColors.background,

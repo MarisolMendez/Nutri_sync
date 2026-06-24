@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../hydration/domain/entities/hydration_entity.dart';
 import '../../../meal_plan/domain/entities/meal_plan_entities.dart';
 import '../../../medication/domain/entities/medication_entity.dart';
 import '../../../mood/domain/entities/mood_entity.dart';
-import '../../../hydration/presentation/screens/hydration_screen.dart';
-import '../../../meal_plan/presentation/screens/weekly_meal_plan_screen.dart';
-import '../../../medication/presentation/screens/medication_screen.dart';
-import '../../../profile/presentation/screens/profile_screen.dart';
 import '../controllers/dashboard_controller.dart';
 import '../controllers/dashboard_state.dart';
 
@@ -65,11 +62,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.person_outline, color: Colors.white),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => const ProfileScreen(),
-              ),
-            ),
+          onPressed: () => context.push('/profile'),
           ),
           const SizedBox(width: 4),
         ],
@@ -122,9 +115,7 @@ class _DashboardContent extends ConsumerWidget {
             // ── Card Hidratación ────────────────────────────────────
             _HydrationCard(
               hydration: state.hydration,
-              onAddTap: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const HydrationScreen()),
-              ),
+              onAddTap: () => context.push('/hydration'),
             ),
             const SizedBox(height: 20),
 
@@ -135,9 +126,7 @@ class _DashboardContent extends ConsumerWidget {
                 Text('Comidas',
                     style: Theme.of(context).textTheme.titleLarge),
                 TextButton.icon(
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const WeeklyMealPlanScreen()),
-                  ),
+                  onPressed: () => context.push('/meal-plan'),
                   icon: const Text('Ver plan completo'),
                   label: const Icon(Icons.arrow_forward, size: 14),
                   style: TextButton.styleFrom(
@@ -189,9 +178,7 @@ class _DashboardContent extends ConsumerWidget {
             _MedicationSection(
               medications: state.medications,
               takenMedicationIds: state.takenMedicationIds,
-              onAddTap: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const MedicationScreen()),
-              ),
+              onAddTap: () => context.push('/medication'),
               onToggleTaken: (medicationId) => ref
                   .read(dashboardControllerProvider.notifier)
                   .toggleMedicationTaken(medicationId),
@@ -710,7 +697,7 @@ class _MoodSectionState extends State<_MoodSection> {
                             ? Border.all(color: NutriColors.primary, width: 2)
                             : null,
                         color: isSelected
-                            ? NutriColors.primary.withOpacity(0.08)
+                            ? NutriColors.primary.withValues(alpha: 0.08)
                             : Colors.transparent,
                       ),
                       child: Center(

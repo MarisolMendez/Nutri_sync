@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/di/providers.dart';
+import '../../../../core/notifications/notification_service.dart';
 import '../../domain/usecases/get_daily_hydration_usecase.dart';
 import '../../domain/usecases/log_water_usecase.dart';
 import 'hydration_state.dart';
@@ -10,18 +11,18 @@ final hydrationControllerProvider =
 );
 
 class HydrationController extends Notifier<HydrationState> {
-  final GetDailyHydrationUseCase _getDailyHydration;
-  final LogWaterUseCase _logWater;
+  late final GetDailyHydrationUseCase _getDailyHydration;
+  late final LogWaterUseCase _logWater;
+  late final NotificationService _notificationService;
 
   // Usuario temporal hasta conectar auth
   static const _tempUserId = 'user_1';
 
-  HydrationController()
-      : _getDailyHydration = sl(),
-        _logWater = sl();
-
   @override
   HydrationState build() {
+    _getDailyHydration = sl();
+    _logWater = sl();
+    _notificationService = sl();
     return const HydrationInitial();
   }
 
@@ -54,4 +55,14 @@ class HydrationController extends Notifier<HydrationState> {
       state = (state as HydrationLoaded).copyWith(customAmountMl: amountMl);
     }
   }
+
+  /// Activa recordatorios cada [intervalHours] horas entre las 8am y 10pm.
+  /// Se llama desde un toggle de configuración o tras completar el registro.
+  Future<void> enableReminders({int intervalHours = 2}) =>
+      _notificationService.scheduleHydrationReminders(
+        intervalHours: intervalHours,
+      );
+
+  Future<void> disableReminders() =>
+      _notificationService.cancelHydrationReminders();
 }

@@ -32,7 +32,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                       width: 64,
                       height: 64,
                       decoration: BoxDecoration(
-                        color: NutriColors.primary.withOpacity(0.12),
+                        color: NutriColors.primary.withValues(alpha: 0.12),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(

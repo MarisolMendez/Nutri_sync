@@ -5,6 +5,11 @@ import '../models/meal_plan_models.dart';
 abstract class MealPlanLocalDatasource {
   Future<WeeklyPlanModel?> getWeeklyPlan(String userId, DateTime weekStart);
   Future<void> markMealConsumed(int mealId, bool consumed);
+  Future<void> saveSubstituteNote({
+    required int mealId,
+    String? note,
+    String? voiceNotePath,
+  });
   Future<RecipeModel?> getRecipeByMealId(int mealId);
 }
 
@@ -40,6 +45,23 @@ class MealPlanLocalDatasourceImpl implements MealPlanLocalDatasource {
       await mealDao.markMealConsumed(mealId, consumed);
     } catch (e) {
       throw DatabaseException('Error al actualizar comida: $e');
+    }
+  }
+
+  @override
+  Future<void> saveSubstituteNote({
+    required int mealId,
+    String? note,
+    String? voiceNotePath,
+  }) async {
+    try {
+      await mealDao.saveSubstituteNote(
+        mealId: mealId,
+        note: note,
+        voiceNotePath: voiceNotePath,
+      );
+    } catch (e) {
+      throw DatabaseException('Error al guardar nota sustituta: $e');
     }
   }
 

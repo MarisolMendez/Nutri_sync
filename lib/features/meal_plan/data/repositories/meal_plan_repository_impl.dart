@@ -35,12 +35,38 @@ class MealPlanRepositoryImpl implements MealPlanRepository {
     required int mealId,
     required bool consumed,
     String? substituteNote,
+    String? voiceNotePath,
   }) async {
     try {
       await localDatasource.markMealConsumed(mealId, consumed);
+      if (substituteNote != null || voiceNotePath != null) {
+        await localDatasource.saveSubstituteNote(
+          mealId: mealId,
+          note: substituteNote,
+          voiceNotePath: voiceNotePath,
+        );
+      }
       return const Right(null);
     } catch (e) {
       return Left(DatabaseFailure('Error al actualizar comida: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> saveSubstituteNote({
+    required int mealId,
+    String? note,
+    String? voiceNotePath,
+  }) async {
+    try {
+      await localDatasource.saveSubstituteNote(
+        mealId: mealId,
+        note: note,
+        voiceNotePath: voiceNotePath,
+      );
+      return const Right(null);
+    } catch (e) {
+      return Left(DatabaseFailure('Error al guardar nota sustituta: $e'));
     }
   }
 

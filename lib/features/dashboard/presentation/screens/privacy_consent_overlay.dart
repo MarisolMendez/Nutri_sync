@@ -12,7 +12,7 @@ class PrivacyConsentOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: NutriColors.primary.withOpacity(0.25),
+      color: NutriColors.primary.withValues(alpha: 0.25),
       child: Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 28),
@@ -29,7 +29,7 @@ class PrivacyConsentOverlay extends StatelessWidget {
                   width: 56,
                   height: 56,
                   decoration: BoxDecoration(
-                    color: NutriColors.primary.withOpacity(0.12),
+                    color: NutriColors.primary.withValues(alpha: 0.12),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(

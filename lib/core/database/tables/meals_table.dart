@@ -21,6 +21,7 @@ class MealsTable extends Table {
   RealColumn get fatG => real().nullable()();
   BoolColumn get isConsumed => boolean().withDefault(const Constant(false))();
   TextColumn get substituteNote => text().nullable()(); // "No lo voy a comer, ¿Qué comiste?"
+  TextColumn get voiceNotePath => text().nullable()();
   BoolColumn get isSynced => boolean().withDefault(const Constant(false))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }

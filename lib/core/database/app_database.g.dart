@@ -962,6 +962,12 @@ class $MealsTableTable extends MealsTable
   late final GeneratedColumn<String> substituteNote = GeneratedColumn<String>(
       'substitute_note', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _voiceNotePathMeta =
+      const VerificationMeta('voiceNotePath');
+  @override
+  late final GeneratedColumn<String> voiceNotePath = GeneratedColumn<String>(
+      'voice_note_path', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _isSyncedMeta =
       const VerificationMeta('isSynced');
   @override
@@ -995,6 +1001,7 @@ class $MealsTableTable extends MealsTable
         fatG,
         isConsumed,
         substituteNote,
+        voiceNotePath,
         isSynced,
         createdAt
       ];
@@ -1075,6 +1082,12 @@ class $MealsTableTable extends MealsTable
           substituteNote.isAcceptableOrUnknown(
               data['substitute_note']!, _substituteNoteMeta));
     }
+    if (data.containsKey('voice_note_path')) {
+      context.handle(
+          _voiceNotePathMeta,
+          voiceNotePath.isAcceptableOrUnknown(
+              data['voice_note_path']!, _voiceNotePathMeta));
+    }
     if (data.containsKey('is_synced')) {
       context.handle(_isSyncedMeta,
           isSynced.isAcceptableOrUnknown(data['is_synced']!, _isSyncedMeta));
@@ -1118,6 +1131,8 @@ class $MealsTableTable extends MealsTable
           .read(DriftSqlType.bool, data['${effectivePrefix}is_consumed'])!,
       substituteNote: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}substitute_note']),
+      voiceNotePath: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}voice_note_path']),
       isSynced: attachedDatabase.typeMapping
           .read(DriftSqlType.bool, data['${effectivePrefix}is_synced'])!,
       createdAt: attachedDatabase.typeMapping
@@ -1145,6 +1160,7 @@ class MealsTableData extends DataClass implements Insertable<MealsTableData> {
   final double? fatG;
   final bool isConsumed;
   final String? substituteNote;
+  final String? voiceNotePath;
   final bool isSynced;
   final DateTime createdAt;
   const MealsTableData(
@@ -1161,6 +1177,7 @@ class MealsTableData extends DataClass implements Insertable<MealsTableData> {
       this.fatG,
       required this.isConsumed,
       this.substituteNote,
+      this.voiceNotePath,
       required this.isSynced,
       required this.createdAt});
   @override
@@ -1193,6 +1210,9 @@ class MealsTableData extends DataClass implements Insertable<MealsTableData> {
     if (!nullToAbsent || substituteNote != null) {
       map['substitute_note'] = Variable<String>(substituteNote);
     }
+    if (!nullToAbsent || voiceNotePath != null) {
+      map['voice_note_path'] = Variable<String>(voiceNotePath);
+    }
     map['is_synced'] = Variable<bool>(isSynced);
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
@@ -1224,6 +1244,9 @@ class MealsTableData extends DataClass implements Insertable<MealsTableData> {
       substituteNote: substituteNote == null && nullToAbsent
           ? const Value.absent()
           : Value(substituteNote),
+      voiceNotePath: voiceNotePath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(voiceNotePath),
       isSynced: Value(isSynced),
       createdAt: Value(createdAt),
     );
@@ -1246,6 +1269,7 @@ class MealsTableData extends DataClass implements Insertable<MealsTableData> {
       fatG: serializer.fromJson<double?>(json['fatG']),
       isConsumed: serializer.fromJson<bool>(json['isConsumed']),
       substituteNote: serializer.fromJson<String?>(json['substituteNote']),
+      voiceNotePath: serializer.fromJson<String?>(json['voiceNotePath']),
       isSynced: serializer.fromJson<bool>(json['isSynced']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
@@ -1267,6 +1291,7 @@ class MealsTableData extends DataClass implements Insertable<MealsTableData> {
       'fatG': serializer.toJson<double?>(fatG),
       'isConsumed': serializer.toJson<bool>(isConsumed),
       'substituteNote': serializer.toJson<String?>(substituteNote),
+      'voiceNotePath': serializer.toJson<String?>(voiceNotePath),
       'isSynced': serializer.toJson<bool>(isSynced),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
@@ -1286,6 +1311,7 @@ class MealsTableData extends DataClass implements Insertable<MealsTableData> {
           Value<double?> fatG = const Value.absent(),
           bool? isConsumed,
           Value<String?> substituteNote = const Value.absent(),
+          Value<String?> voiceNotePath = const Value.absent(),
           bool? isSynced,
           DateTime? createdAt}) =>
       MealsTableData(
@@ -1303,6 +1329,8 @@ class MealsTableData extends DataClass implements Insertable<MealsTableData> {
         isConsumed: isConsumed ?? this.isConsumed,
         substituteNote:
             substituteNote.present ? substituteNote.value : this.substituteNote,
+        voiceNotePath:
+            voiceNotePath.present ? voiceNotePath.value : this.voiceNotePath,
         isSynced: isSynced ?? this.isSynced,
         createdAt: createdAt ?? this.createdAt,
       );
@@ -1326,6 +1354,9 @@ class MealsTableData extends DataClass implements Insertable<MealsTableData> {
       substituteNote: data.substituteNote.present
           ? data.substituteNote.value
           : this.substituteNote,
+      voiceNotePath: data.voiceNotePath.present
+          ? data.voiceNotePath.value
+          : this.voiceNotePath,
       isSynced: data.isSynced.present ? data.isSynced.value : this.isSynced,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
@@ -1347,6 +1378,7 @@ class MealsTableData extends DataClass implements Insertable<MealsTableData> {
           ..write('fatG: $fatG, ')
           ..write('isConsumed: $isConsumed, ')
           ..write('substituteNote: $substituteNote, ')
+          ..write('voiceNotePath: $voiceNotePath, ')
           ..write('isSynced: $isSynced, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
@@ -1368,6 +1400,7 @@ class MealsTableData extends DataClass implements Insertable<MealsTableData> {
       fatG,
       isConsumed,
       substituteNote,
+      voiceNotePath,
       isSynced,
       createdAt);
   @override
@@ -1387,6 +1420,7 @@ class MealsTableData extends DataClass implements Insertable<MealsTableData> {
           other.fatG == this.fatG &&
           other.isConsumed == this.isConsumed &&
           other.substituteNote == this.substituteNote &&
+          other.voiceNotePath == this.voiceNotePath &&
           other.isSynced == this.isSynced &&
           other.createdAt == this.createdAt);
 }
@@ -1405,6 +1439,7 @@ class MealsTableCompanion extends UpdateCompanion<MealsTableData> {
   final Value<double?> fatG;
   final Value<bool> isConsumed;
   final Value<String?> substituteNote;
+  final Value<String?> voiceNotePath;
   final Value<bool> isSynced;
   final Value<DateTime> createdAt;
   const MealsTableCompanion({
@@ -1421,6 +1456,7 @@ class MealsTableCompanion extends UpdateCompanion<MealsTableData> {
     this.fatG = const Value.absent(),
     this.isConsumed = const Value.absent(),
     this.substituteNote = const Value.absent(),
+    this.voiceNotePath = const Value.absent(),
     this.isSynced = const Value.absent(),
     this.createdAt = const Value.absent(),
   });
@@ -1438,6 +1474,7 @@ class MealsTableCompanion extends UpdateCompanion<MealsTableData> {
     this.fatG = const Value.absent(),
     this.isConsumed = const Value.absent(),
     this.substituteNote = const Value.absent(),
+    this.voiceNotePath = const Value.absent(),
     this.isSynced = const Value.absent(),
     this.createdAt = const Value.absent(),
   })  : weeklyPlanId = Value(weeklyPlanId),
@@ -1458,6 +1495,7 @@ class MealsTableCompanion extends UpdateCompanion<MealsTableData> {
     Expression<double>? fatG,
     Expression<bool>? isConsumed,
     Expression<String>? substituteNote,
+    Expression<String>? voiceNotePath,
     Expression<bool>? isSynced,
     Expression<DateTime>? createdAt,
   }) {
@@ -1475,6 +1513,7 @@ class MealsTableCompanion extends UpdateCompanion<MealsTableData> {
       if (fatG != null) 'fat_g': fatG,
       if (isConsumed != null) 'is_consumed': isConsumed,
       if (substituteNote != null) 'substitute_note': substituteNote,
+      if (voiceNotePath != null) 'voice_note_path': voiceNotePath,
       if (isSynced != null) 'is_synced': isSynced,
       if (createdAt != null) 'created_at': createdAt,
     });
@@ -1494,6 +1533,7 @@ class MealsTableCompanion extends UpdateCompanion<MealsTableData> {
       Value<double?>? fatG,
       Value<bool>? isConsumed,
       Value<String?>? substituteNote,
+      Value<String?>? voiceNotePath,
       Value<bool>? isSynced,
       Value<DateTime>? createdAt}) {
     return MealsTableCompanion(
@@ -1510,6 +1550,7 @@ class MealsTableCompanion extends UpdateCompanion<MealsTableData> {
       fatG: fatG ?? this.fatG,
       isConsumed: isConsumed ?? this.isConsumed,
       substituteNote: substituteNote ?? this.substituteNote,
+      voiceNotePath: voiceNotePath ?? this.voiceNotePath,
       isSynced: isSynced ?? this.isSynced,
       createdAt: createdAt ?? this.createdAt,
     );
@@ -1557,6 +1598,9 @@ class MealsTableCompanion extends UpdateCompanion<MealsTableData> {
     if (substituteNote.present) {
       map['substitute_note'] = Variable<String>(substituteNote.value);
     }
+    if (voiceNotePath.present) {
+      map['voice_note_path'] = Variable<String>(voiceNotePath.value);
+    }
     if (isSynced.present) {
       map['is_synced'] = Variable<bool>(isSynced.value);
     }
@@ -1582,6 +1626,7 @@ class MealsTableCompanion extends UpdateCompanion<MealsTableData> {
           ..write('fatG: $fatG, ')
           ..write('isConsumed: $isConsumed, ')
           ..write('substituteNote: $substituteNote, ')
+          ..write('voiceNotePath: $voiceNotePath, ')
           ..write('isSynced: $isSynced, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
@@ -5337,6 +5382,7 @@ typedef $$MealsTableTableCreateCompanionBuilder = MealsTableCompanion Function({
   Value<double?> fatG,
   Value<bool> isConsumed,
   Value<String?> substituteNote,
+  Value<String?> voiceNotePath,
   Value<bool> isSynced,
   Value<DateTime> createdAt,
 });
@@ -5354,6 +5400,7 @@ typedef $$MealsTableTableUpdateCompanionBuilder = MealsTableCompanion Function({
   Value<double?> fatG,
   Value<bool> isConsumed,
   Value<String?> substituteNote,
+  Value<String?> voiceNotePath,
   Value<bool> isSynced,
   Value<DateTime> createdAt,
 });
@@ -5439,6 +5486,9 @@ class $$MealsTableTableFilterComposer
   ColumnFilters<String> get substituteNote => $composableBuilder(
       column: $table.substituteNote,
       builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get voiceNotePath => $composableBuilder(
+      column: $table.voiceNotePath, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<bool> get isSynced => $composableBuilder(
       column: $table.isSynced, builder: (column) => ColumnFilters(column));
@@ -5534,6 +5584,10 @@ class $$MealsTableTableOrderingComposer
       column: $table.substituteNote,
       builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get voiceNotePath => $composableBuilder(
+      column: $table.voiceNotePath,
+      builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<bool> get isSynced => $composableBuilder(
       column: $table.isSynced, builder: (column) => ColumnOrderings(column));
 
@@ -5605,6 +5659,9 @@ class $$MealsTableTableAnnotationComposer
 
   GeneratedColumn<String> get substituteNote => $composableBuilder(
       column: $table.substituteNote, builder: (column) => column);
+
+  GeneratedColumn<String> get voiceNotePath => $composableBuilder(
+      column: $table.voiceNotePath, builder: (column) => column);
 
   GeneratedColumn<bool> get isSynced =>
       $composableBuilder(column: $table.isSynced, builder: (column) => column);
@@ -5690,6 +5747,7 @@ class $$MealsTableTableTableManager extends RootTableManager<
             Value<double?> fatG = const Value.absent(),
             Value<bool> isConsumed = const Value.absent(),
             Value<String?> substituteNote = const Value.absent(),
+            Value<String?> voiceNotePath = const Value.absent(),
             Value<bool> isSynced = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
           }) =>
@@ -5707,6 +5765,7 @@ class $$MealsTableTableTableManager extends RootTableManager<
             fatG: fatG,
             isConsumed: isConsumed,
             substituteNote: substituteNote,
+            voiceNotePath: voiceNotePath,
             isSynced: isSynced,
             createdAt: createdAt,
           ),
@@ -5724,6 +5783,7 @@ class $$MealsTableTableTableManager extends RootTableManager<
             Value<double?> fatG = const Value.absent(),
             Value<bool> isConsumed = const Value.absent(),
             Value<String?> substituteNote = const Value.absent(),
+            Value<String?> voiceNotePath = const Value.absent(),
             Value<bool> isSynced = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
           }) =>
@@ -5741,6 +5801,7 @@ class $$MealsTableTableTableManager extends RootTableManager<
             fatG: fatG,
             isConsumed: isConsumed,
             substituteNote: substituteNote,
+            voiceNotePath: voiceNotePath,
             isSynced: isSynced,
             createdAt: createdAt,
           ),

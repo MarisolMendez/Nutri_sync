@@ -9,8 +9,14 @@ import '../database/daos/hydration_dao.dart';
 import '../database/daos/meal_dao.dart';
 import '../database/daos/medication_dao.dart';
 import '../database/daos/mood_dao.dart';
+import '../database/daos/sync_queue_dao.dart';
 import '../database/daos/user_dao.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+
 import '../network/network_info.dart';
+import '../notifications/notification_service.dart';
+import '../sync/sync_manager.dart';
 
 // ── Features ──────────────────────────────────────────────────────────────────
 import '../../features/auth/data/datasources/auth_local_datasource.dart';
@@ -39,6 +45,7 @@ import '../../features/meal_plan/data/repositories/meal_plan_repository_impl.dar
 import '../../features/meal_plan/domain/repositories/meal_plan_repository.dart';
 import '../../features/meal_plan/domain/usecases/get_weekly_plan_usecase.dart';
 import '../../features/meal_plan/domain/usecases/update_meal_usecase.dart';
+import '../../features/meal_plan/domain/usecases/save_substitute_note_usecase.dart';
 import '../../features/meal_plan/domain/usecases/sync_meal_plans_usecase.dart';
 
 import '../../features/medication/data/datasources/medication_local_datasource.dart';
@@ -98,21 +105,33 @@ Future<void> _initCore() async {
   sl.registerLazySingleton(() => HydrationDao(sl<AppDatabase>()));
   sl.registerLazySingleton(() => MoodDao(sl<AppDatabase>()));
   sl.registerLazySingleton(() => MedicationDao(sl<AppDatabase>()));
-  // sl.registerLazySingleton(() => SyncQueueDao(sl<AppDatabase>()));
+  sl.registerLazySingleton(() => SyncQueueDao(sl<AppDatabase>()));
 
   // ApiClient — Dio configurado con interceptores
   // sl.registerLazySingleton(
   //   () => ApiClient(baseUrl: 'https://api.nutrisync.com/v1'),
   // );
 
-  // SyncManager — se inicia en bootstrap.dart
-  // sl.registerLazySingleton(
-  //   () => SyncManager(
-  //     syncQueueDao: sl(),
-  //     firestore: sl(),
-  //     connectivity: sl(),
-  //   ),
-  // );
+  // FirebaseMessaging y FlutterLocalNotificationsPlugin — nativos del SDK
+  sl.registerLazySingleton(() => FirebaseMessaging.instance);
+  sl.registerLazySingleton(() => FlutterLocalNotificationsPlugin());
+
+  // NotificationService
+  sl.registerLazySingleton<NotificationService>(
+    () => NotificationService(
+      messaging: sl(),
+      localNotifications: sl(),
+    ),
+  );
+
+  // SyncManager
+  sl.registerLazySingleton<SyncManager>(
+    () => SyncManager(
+      syncQueueDao: sl(),
+      firestore: sl(),
+      connectivity: sl(),
+    ),
+  );
 }
 
 // ── AUTH ──────────────────────────────────────────────────────────────────────
@@ -166,6 +185,7 @@ Future<void> _initMealPlan() async {
   );
   sl.registerLazySingleton(() => GetWeeklyPlanUseCase(sl()));
   sl.registerLazySingleton(() => UpdateMealUseCase(sl()));
+  sl.registerLazySingleton(() => SaveSubstituteNoteUseCase(sl()));
   sl.registerLazySingleton(() => SyncMealPlansUseCase(sl()));
 }
 

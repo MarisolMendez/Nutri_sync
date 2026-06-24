@@ -30,51 +30,44 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'YOUR_WEB_API_KEY',
-    appId: 'YOUR_WEB_APP_ID',
-    messagingSenderId: 'YOUR_WEB_MESSAGING_SENDER_ID',
-    projectId: 'YOUR_PROJECT_ID',
-    authDomain: 'YOUR_AUTH_DOMAIN',
-    databaseURL: 'YOUR_DATABASE_URL',
-    storageBucket: 'YOUR_STORAGE_BUCKET',
-    measurementId: 'YOUR_MEASUREMENT_ID',
+    apiKey: 'AIzaSyDGTpjQiQfySgS6hfqHcvrhAbGh0Xq-9PA',
+    appId: '1:392171194091:web:11c839460e6f38d02be0ae',
+    messagingSenderId: '392171194091',
+    projectId: 'nutrisync-2def4',
+    authDomain: 'nutrisync-2def4.firebaseapp.com',
+    storageBucket: 'nutrisync-2def4.firebasestorage.app',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'YOUR_ANDROID_API_KEY',
-    appId: 'YOUR_ANDROID_APP_ID',
-    messagingSenderId: 'YOUR_ANDROID_MESSAGING_SENDER_ID',
-    projectId: 'YOUR_PROJECT_ID',
-    databaseURL: 'YOUR_DATABASE_URL',
-    storageBucket: 'YOUR_STORAGE_BUCKET',
+    apiKey: 'AIzaSyAfvlfkI_sEAsSNBJLZJfOVg2hqr_Pqz28',
+    appId: '1:392171194091:android:86bb87e298027a8f2be0ae',
+    messagingSenderId: '392171194091',
+    projectId: 'nutrisync-2def4',
+    storageBucket: 'nutrisync-2def4.firebasestorage.app',
   );
-
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'YOUR_IOS_API_KEY',
-    appId: 'YOUR_IOS_APP_ID',
-    messagingSenderId: 'YOUR_IOS_MESSAGING_SENDER_ID',
-    projectId: 'YOUR_PROJECT_ID',
-    databaseURL: 'YOUR_DATABASE_URL',
-    storageBucket: 'YOUR_STORAGE_BUCKET',
+    apiKey: 'AIzaSyClvPo5n9QUywDusvHsI4exwiivFz_7KTU',
+    appId: '1:392171194091:ios:57a10a34a25ea3712be0ae',
+    messagingSenderId: '392171194091',
+    projectId: 'nutrisync-2def4',
+    storageBucket: 'nutrisync-2def4.firebasestorage.app',
     iosBundleId: 'com.example.nutriSync',
   );
-
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'YOUR_MACOS_API_KEY',
-    appId: 'YOUR_MACOS_APP_ID',
-    messagingSenderId: 'YOUR_MACOS_MESSAGING_SENDER_ID',
-    projectId: 'YOUR_PROJECT_ID',
-    databaseURL: 'YOUR_DATABASE_URL',
-    storageBucket: 'YOUR_STORAGE_BUCKET',
+    apiKey: 'AIzaSyClvPo5n9QUywDusvHsI4exwiivFz_7KTU',
+    appId: '1:392171194091:ios:57a10a34a25ea3712be0ae',
+    messagingSenderId: '392171194091',
+    projectId: 'nutrisync-2def4',
+    storageBucket: 'nutrisync-2def4.firebasestorage.app',
     iosBundleId: 'com.example.nutriSync',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'YOUR_WINDOWS_API_KEY',
-    appId: 'YOUR_WINDOWS_APP_ID',
-    messagingSenderId: 'YOUR_WINDOWS_MESSAGING_SENDER_ID',
-    projectId: 'YOUR_PROJECT_ID',
-    databaseURL: 'YOUR_DATABASE_URL',
-    storageBucket: 'YOUR_STORAGE_BUCKET',
+    apiKey: 'AIzaSyDGTpjQiQfySgS6hfqHcvrhAbGh0Xq-9PA',
+    appId: '1:392171194091:web:2f4b188ee59029d72be0ae',
+    messagingSenderId: '392171194091',
+    projectId: 'nutrisync-2def4',
+    authDomain: 'nutrisync-2def4.firebaseapp.com',
+    storageBucket: 'nutrisync-2def4.firebasestorage.app',
   );
 }

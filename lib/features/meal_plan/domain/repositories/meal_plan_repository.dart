@@ -14,6 +14,14 @@ abstract class MealPlanRepository {
     required int mealId,
     required bool consumed,
     String? substituteNote,
+    String? voiceNotePath,
+  });
+
+  /// Guarda la nota sustituta (texto + voz) de una comida
+  Future<Either<Failure, void>> saveSubstituteNote({
+    required int mealId,
+    String? note,
+    String? voiceNotePath,
   });
 
   /// Trae el detalle de una receta por meal
