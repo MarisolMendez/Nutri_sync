@@ -24,6 +24,7 @@ import '../../features/auth/data/repositories/auth_repository_impl.dart';
 import '../../features/auth/domain/repositories/auth_repository.dart';
 import '../../features/auth/domain/usecases/login_usecase.dart';
 import '../../features/auth/domain/usecases/logout_usecase.dart';
+import '../../features/auth/domain/usecases/get_current_user_usecase.dart';
 import '../../features/auth/domain/usecases/register_usecase.dart';
 
 // Comentados: features no completadas
@@ -51,6 +52,7 @@ import '../../features/meal_plan/domain/usecases/sync_meal_plans_usecase.dart';
 import '../../features/medication/data/datasources/medication_local_datasource.dart';
 import '../../features/medication/data/repositories/medication_repository_impl.dart';
 import '../../features/medication/domain/repositories/medication_repository.dart';
+import '../../features/medication/domain/usecases/delete_medication_usecase.dart';
 import '../../features/medication/domain/usecases/log_medication_usecase.dart';
 import '../../features/medication/domain/usecases/log_medication_taken_usecase.dart';
 import '../../features/medication/domain/usecases/get_medication_schedule_usecase.dart';
@@ -145,6 +147,7 @@ Future<void> _initAuth() async {
   sl.registerLazySingleton<AuthRepository>(
     () => AuthRepositoryImpl(
       localDatasource: sl(),
+      userDao: sl(),
     ),
   );
 
@@ -152,6 +155,7 @@ Future<void> _initAuth() async {
   sl.registerLazySingleton(() => LoginUseCase(sl()));
   sl.registerLazySingleton(() => LogoutUseCase(sl()));
   sl.registerLazySingleton(() => RegisterUseCase(sl()));
+  sl.registerLazySingleton(() => GetCurrentUserUseCase(sl()));
 }
 
 // ── HYDRATION ─────────────────────────────────────────────────────────────────
@@ -214,6 +218,7 @@ Future<void> _initMedication() async {
   sl.registerLazySingleton(() => LogMedicationUseCase(sl()));
   sl.registerLazySingleton(() => LogMedicationTakenUseCase(sl()));
   sl.registerLazySingleton(() => GetMedicationScheduleUseCase(sl()));
+  sl.registerLazySingleton(() => DeleteMedicationUseCase(sl()));
 }
 
 // ── PROFILE ───────────────────────────────────────────────────────────────

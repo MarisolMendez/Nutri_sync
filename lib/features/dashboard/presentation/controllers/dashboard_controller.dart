@@ -6,10 +6,12 @@ import '../../../meal_plan/domain/entities/meal_plan_entities.dart';
 import '../../../meal_plan/domain/usecases/get_weekly_plan_usecase.dart';
 import '../../../meal_plan/domain/usecases/update_meal_usecase.dart';
 import '../../../medication/domain/entities/medication_entity.dart';
+import '../../../medication/domain/usecases/delete_medication_usecase.dart';
 import '../../../medication/domain/usecases/get_medication_schedule_usecase.dart';
 import '../../../medication/domain/repositories/medication_repository.dart';
 import '../../../medication/domain/usecases/log_medication_taken_usecase.dart';
 import '../../../mood/domain/entities/mood_entity.dart';
+import '../../../mood/domain/repositories/mood_repository.dart';
 import '../../../mood/domain/usecases/log_mood_usecase.dart';
 import 'dashboard_state.dart';
 
@@ -25,6 +27,8 @@ class DashboardController extends Notifier<DashboardState> {
   late final LogMoodUseCase _logMood;
   late final UpdateMealUseCase _updateMeal;
   late final LogMedicationTakenUseCase _logMedicationTaken;
+  late final DeleteMedicationUseCase _deleteMedication;
+  late final MoodRepository _moodRepository;
 
   static const _tempUserId = 'user_1';
 
@@ -36,6 +40,8 @@ class DashboardController extends Notifier<DashboardState> {
     _logMood = sl();
     _updateMeal = sl();
     _logMedicationTaken = sl();
+    _deleteMedication = sl();
+    _moodRepository = sl();
     return const DashboardInitial();
   }
 
@@ -84,11 +90,18 @@ class DashboardController extends Notifier<DashboardState> {
       // Obtener IDs de medicamentos ya tomados hoy
       final takenIdsResult = await sl<MedicationRepository>().getTodayTakenIds();
 
+      // Obtener el estado de ánimo de hoy
+      final todayMoodResult = await _moodRepository.getTodayMood(
+        userId: _tempUserId,
+      );
+      final todayMood = todayMoodResult.getOrElse(() => null);
+
       state = DashboardLoaded(
         hydration: hydration,
         todayMeals: todayMeals,
         medications: medications,
         takenMedicationIds: takenIdsResult.getOrElse(() => const {}),
+        todayMood: todayMood,
         date: now,
       );
     } catch (e) {
@@ -113,6 +126,11 @@ class DashboardController extends Notifier<DashboardState> {
 
   Future<void> saveMood(MoodValue mood) async {
     await _logMood(LogMoodParams(userId: _tempUserId, mood: mood));
+    await load();
+  }
+
+  Future<void> deleteMedication(int id) async {
+    await _deleteMedication(DeleteMedicationParams(id: id));
     await load();
   }
 }

@@ -178,16 +178,20 @@ class _DashboardContent extends ConsumerWidget {
             _MedicationSection(
               medications: state.medications,
               takenMedicationIds: state.takenMedicationIds,
-              onAddTap: () => context.push('/medication'),
               onToggleTaken: (medicationId) => ref
                   .read(dashboardControllerProvider.notifier)
                   .toggleMedicationTaken(medicationId),
+              onAddTap: () => context.push('/medication'),
+              onDeleteMedication: (medicationId) => ref
+                  .read(dashboardControllerProvider.notifier)
+                  .deleteMedication(medicationId),
             ),
             const SizedBox(height: 20),
 
             // ── Sección Mood ────────────────────────────────────────
             _MoodSection(
               currentMood: state.todayMood?.mood,
+              isSaved: state.todayMood != null,
               onSave: (mood) => ref
                   .read(dashboardControllerProvider.notifier)
                   .saveMood(mood),
@@ -550,12 +554,14 @@ class _MedicationSection extends StatelessWidget {
   final Set<int> takenMedicationIds;
   final VoidCallback? onAddTap;
   final void Function(int medicationId)? onToggleTaken;
+  final void Function(int medicationId)? onDeleteMedication;
 
   const _MedicationSection({
     required this.medications,
     this.takenMedicationIds = const {},
     this.onAddTap,
     this.onToggleTaken,
+    this.onDeleteMedication,
   });
 
   @override
@@ -578,51 +584,89 @@ class _MedicationSection extends StatelessWidget {
             )
           else
             ...medications.map(
-              (med) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: Row(
-                  children: [
-                    Checkbox(
-                      value: takenMedicationIds.contains(med.id),
-                      onChanged: (_) => onToggleTaken?.call(med.id),
-                      activeColor: NutriColors.primary,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(4)),
-                    ),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(med.name,
-                              style: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(fontWeight: FontWeight.w600)),
-                          Text(med.dosage,
-                              style: Theme.of(context).textTheme.bodySmall),
-                        ],
-                      ),
-                    ),
-                    if (med.times.isNotEmpty)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: NutriColors.inputFill,
-                          borderRadius: BorderRadius.circular(8),
+              (med) => Dismissible(
+                key: ValueKey(med.id),
+                direction: DismissDirection.endToStart,
+                confirmDismiss: (_) async {
+                  final confirmed = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text('Eliminar medicación'),
+                      content: Text('¿Seguro que quieres eliminar "${med.name}"?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(ctx).pop(false),
+                          child: const Text('Cancelar'),
                         ),
-                        child: Row(
+                        TextButton(
+                          onPressed: () => Navigator.of(ctx).pop(true),
+                          child: const Text('Eliminar',
+                              style: TextStyle(color: NutriColors.error)),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (confirmed == true) {
+                    onDeleteMedication?.call(med.id);
+                  }
+                  return false;
+                },
+                background: Container(
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: 20),
+                  decoration: BoxDecoration(
+                    color: NutriColors.error,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(Icons.delete_outline,
+                      color: Colors.white, size: 28),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Row(
+                    children: [
+                      Checkbox(
+                        value: takenMedicationIds.contains(med.id),
+                        onChanged: (_) => onToggleTaken?.call(med.id),
+                        activeColor: NutriColors.primary,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(4)),
+                      ),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Icon(Icons.access_time_outlined,
-                                size: 12, color: NutriColors.textSecondary),
-                            const SizedBox(width: 4),
-                            Text(med.times.first,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
+                            Text(med.name,
+                                style: Theme.of(context).textTheme.bodyMedium
                                     ?.copyWith(fontWeight: FontWeight.w600)),
+                            Text(med.dosage,
+                                style: Theme.of(context).textTheme.bodySmall),
                           ],
                         ),
                       ),
-                  ],
+                      if (med.times.isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: NutriColors.inputFill,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.access_time_outlined,
+                                  size: 12, color: NutriColors.textSecondary),
+                              const SizedBox(width: 4),
+                              Text(med.times.first,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodySmall
+                                      ?.copyWith(fontWeight: FontWeight.w600)),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -647,9 +691,14 @@ class _MedicationSection extends StatelessWidget {
 
 class _MoodSection extends StatefulWidget {
   final MoodValue? currentMood;
+  final bool isSaved;
   final void Function(MoodValue) onSave;
 
-  const _MoodSection({this.currentMood, required this.onSave});
+  const _MoodSection({
+    this.currentMood,
+    this.isSaved = false,
+    required this.onSave,
+  });
 
   @override
   State<_MoodSection> createState() => _MoodSectionState();
@@ -665,19 +714,47 @@ class _MoodSectionState extends State<_MoodSection> {
   }
 
   @override
+  void didUpdateWidget(_MoodSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.currentMood != oldWidget.currentMood) {
+      _selected = widget.currentMood;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final alreadySaved = widget.isSaved;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: NutriColors.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: NutriColors.border),
+        border: Border.all(
+          color: alreadySaved ? NutriColors.primary : NutriColors.border,
+          width: alreadySaved ? 1.5 : 1,
+        ),
       ),
       child: Column(
         children: [
-          Text(
-            '¿Cómo te sientes hoy?',
-            style: Theme.of(context).textTheme.titleMedium,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (alreadySaved)
+                const Icon(Icons.check_circle,
+                    color: NutriColors.primary, size: 20),
+              if (alreadySaved) const SizedBox(width: 8),
+              Text(
+                alreadySaved
+                    ? '¡Estado de ánimo registrado!'
+                    : '¿Cómo te sientes hoy?',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: alreadySaved
+                          ? NutriColors.primary
+                          : NutriColors.textPrimary,
+                    ),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
           Row(
@@ -685,7 +762,9 @@ class _MoodSectionState extends State<_MoodSection> {
             children: MoodValue.values.map((mood) {
               final isSelected = _selected == mood;
               return GestureDetector(
-                onTap: () => setState(() => _selected = mood),
+                onTap: alreadySaved
+                    ? null
+                    : () => setState(() => _selected = mood),
                 child: Column(
                   children: [
                     Container(
@@ -724,10 +803,23 @@ class _MoodSectionState extends State<_MoodSection> {
             }).toList(),
           ),
           const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed:
-                _selected != null ? () => widget.onSave(_selected!) : null,
-            child: const Text('Guardar registro de hoy'),
+          ElevatedButton.icon(
+            onPressed: alreadySaved
+                ? () {}
+                : (_selected != null ? () => widget.onSave(_selected!) : null),
+            icon: Icon(
+              alreadySaved ? Icons.check_circle : Icons.save_outlined,
+              size: 16,
+              color: Colors.white,
+            ),
+            label: Text(
+              alreadySaved ? 'Hoy ya registrado' : 'Guardar registro de hoy',
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: NutriColors.primary,
+              foregroundColor: Colors.white,
+              minimumSize: const Size(double.infinity, 42),
+            ),
           ),
         ],
       ),

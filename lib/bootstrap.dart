@@ -7,6 +7,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 import 'core/di/providers.dart';
+import 'core/database/app_database.dart';
+import 'core/database/seed_data.dart';
 import 'core/notifications/firebase_background_handler.dart';
 import 'core/notifications/notification_service.dart';
 import 'core/router/app_router.dart';
@@ -27,6 +29,9 @@ Future<void> bootstrap() async {
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
   await initDependencies();
+
+  // Datos de ejemplo — comidas para visualizar el plan
+  await seedSampleData(sl<AppDatabase>());
 
   // Notificaciones — inicializa canales y pide permisos
   await sl<NotificationService>().init();

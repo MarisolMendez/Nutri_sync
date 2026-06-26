@@ -9,6 +9,8 @@ import '../../features/mood/presentation/screen/mood_screen.dart';
 
 import '../../features/meal_plan/presentation/screens/weekly_meal_plan_screen.dart';
 import '../../features/medication/presentation/screens/medication_screen.dart';
+import '../../features/dashboard/presentation/screens/terms_and_conditions_screen.dart';
+import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/progress/presentation/screens/progress_screen.dart';
 
 abstract class AppRouter {
@@ -50,6 +52,14 @@ abstract class AppRouter {
       GoRoute(
         path: '/medication',
         builder: (context, state) => const MedicationScreen(),
+      ),
+      GoRoute(
+        path: '/profile',
+        builder: (context, state) => const ProfileScreen(),
+      ),
+      GoRoute(
+        path: '/terms',
+        builder: (context, state) => const TermsAndConditionsScreen(),
       ),
       GoRoute(
         path: '/progress',

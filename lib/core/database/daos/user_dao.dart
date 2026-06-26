@@ -16,6 +16,33 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
   Future<void> upsertUser(UsersTableCompanion user) =>
       into(usersTable).insertOnConflictUpdate(user);
 
+  /// Versión simplificada para crear/actualizar desde fuera del DAO
+  /// sin necesidad de importar drift.
+  Future<void> createOrUpdate({
+    required String id,
+    required String email,
+    required String name,
+    String? photoUrl,
+    double? weightKg,
+    double? heightCm,
+    int? dailyWaterGoalMl,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) =>
+      upsertUser(
+        UsersTableCompanion(
+          id: Value(id),
+          email: Value(email),
+          name: Value(name),
+          photoUrl: Value(photoUrl),
+          weightKg: Value(weightKg),
+          heightCm: Value(heightCm),
+          dailyWaterGoalMl: Value(dailyWaterGoalMl ?? 2000),
+          createdAt: Value(createdAt ?? DateTime.now()),
+          updatedAt: Value(updatedAt ?? DateTime.now()),
+        ),
+      );
+
   Future<void> deleteUser(String id) =>
       (delete(usersTable)..where((u) => u.id.equals(id))).go();
 }

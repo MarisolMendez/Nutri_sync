@@ -1,4 +1,5 @@
 import 'package:dartz/dartz.dart';
+import '../../../../core/database/daos/user_dao.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/entities/user_entity.dart';
 import '../../domain/repositories/auth_repository.dart';
@@ -7,10 +8,12 @@ import '../models/user_model.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   final AuthLocalDatasource localDatasource;
+  final UserDao userDao;
   static const _cachedUserId = 'user_1';
 
   const AuthRepositoryImpl({
     required this.localDatasource,
+    required this.userDao,
   });
 
   @override
@@ -25,6 +28,7 @@ class AuthRepositoryImpl implements AuthRepository {
       createdAt: DateTime.now(),
     );
     await localDatasource.cacheUser(user);
+    await _syncToLocalDb(user);
     return Right(user);
   }
 
@@ -41,13 +45,27 @@ class AuthRepositoryImpl implements AuthRepository {
       createdAt: DateTime.now(),
     );
     await localDatasource.cacheUser(user);
+    await _syncToLocalDb(user);
     return Right(user);
+  }
+
+  /// Guarda o actualiza el usuario también en SQLite (Drift) para que
+  /// el perfil pueda leerlo desde [ProfileLocalDatasource].
+  Future<void> _syncToLocalDb(UserModel user) async {
+    await userDao.createOrUpdate(
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      createdAt: user.createdAt,
+      updatedAt: DateTime.now(),
+    );
   }
 
   @override
   Future<Either<Failure, void>> logout() async {
     try {
       await localDatasource.clearUser(_cachedUserId);
+      await userDao.deleteUser(_cachedUserId);
       return const Right(null);
     } catch (e) {
       return Left(UnexpectedFailure(e.toString()));

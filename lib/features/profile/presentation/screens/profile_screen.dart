@@ -233,6 +233,52 @@ class _ProfileContent extends StatelessWidget {
               ),
             ),
           ),
+          const SizedBox(height: 12),
+
+          // ── Términos y Condiciones ────────────────────────────────
+          GestureDetector(
+            onTap: () => context.push('/terms'),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: NutriColors.surface,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: NutriColors.border),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: NutriColors.primary.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.description_outlined,
+                        color: NutriColors.primary),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Términos y Condiciones',
+                            style: Theme.of(context).textTheme.titleMedium),
+                        Text('Lee nuestros términos de uso',
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(
+                                    color: NutriColors.textSecondary)),
+                      ],
+                    ),
+                  ),
+                  const Icon(Icons.chevron_right,
+                      color: NutriColors.textSecondary),
+                ],
+              ),
+            ),
+          ),
           const SizedBox(height: 20),
 
           // ── Datos personales ─────────────────────────────────────
