@@ -3,10 +3,10 @@ import '../error/failures.dart';
 
 /// Contrato base que todo use case debe implementar.
 ///
-/// [Type] = tipo de dato que retorna en éxito
+/// [ResultType] = tipo de dato que retorna en éxito
 /// [Params] = parámetros que recibe
 ///
-/// Retorna [Either<Failure, Type>]:
+/// Retorna [Either<Failure, ResultType>]:
 ///   - Left(Failure) → algo salió mal
 ///   - Right(Type)   → éxito con el dato
 ///
@@ -19,8 +19,8 @@ import '../error/failures.dart';
 ///   }
 /// }
 /// ```
-abstract class UseCase<Type, Params> {
-  Future<Either<Failure, Type>> call(Params params);
+abstract class UseCase<ResultType, Params> {
+  Future<Either<Failure, ResultType>> call(Params params);
 }
 
 /// Usar cuando el use case no necesita parámetros.

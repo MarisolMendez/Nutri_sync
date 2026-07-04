@@ -7,6 +7,7 @@ import '../../../hydration/domain/entities/hydration_entity.dart';
 import '../../../meal_plan/domain/entities/meal_plan_entities.dart';
 import '../../../medication/domain/entities/medication_entity.dart';
 import '../../../mood/domain/entities/mood_entity.dart';
+import '../../../meal_plan/presentation/screens/weekly_meal_plan_screen.dart';
 import '../controllers/dashboard_controller.dart';
 import '../controllers/dashboard_state.dart';
 
@@ -144,29 +145,29 @@ class _DashboardContent extends ConsumerWidget {
 
             // Cards de comidas
             if (state.todayMeals.isEmpty)
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: NutriColors.surface,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: NutriColors.border),
+              MealCard(
+                meal: MealEntity(
+                  id: 0,
+                  weeklyPlanId: 1,
+                  dayOfWeek: DateTime.now().weekday,
+                  mealType: 'lunch',
+                  name: 'Ensalada de Pollo',
+                  calories: 450,
+                  proteinG: 35,
+                  carbsG: 25,
+                  fatG: 18,
+                  isConsumed: false,
                 ),
-                child: Center(
-                  child: Text(
-                    'Sin comidas asignadas para hoy',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: NutriColors.textSecondary,
-                        ),
-                  ),
-                ),
+                showDetailsButton: false,
               )
             else
               ...state.todayMeals.map(
-                (meal) => _DashboardMealCard(
+                (meal) => MealCard(
                   meal: meal,
-                  onToggleConsumed: () => ref
+                  showDetailsButton: false,
+                  onToggleConsumed: (m) => ref
                       .read(dashboardControllerProvider.notifier)
-                      .toggleMealConsumed(meal),
+                      .toggleMealConsumed(m),
                 ),
               ),
             const SizedBox(height: 20),
@@ -371,181 +372,6 @@ class _DaySelector extends StatelessWidget {
   }
 }
 
-// ── Card de comida en dashboard ───────────────────────────────────────────────
-
-class _DashboardMealCard extends StatefulWidget {
-  final MealEntity meal;
-  final VoidCallback onToggleConsumed;
-
-  const _DashboardMealCard({
-    required this.meal,
-    required this.onToggleConsumed,
-  });
-
-  @override
-  State<_DashboardMealCard> createState() => _DashboardMealCardState();
-}
-
-class _DashboardMealCardState extends State<_DashboardMealCard> {
-  bool _showNote = false;
-  final _noteController = TextEditingController();
-
-  @override
-  void dispose() {
-    _noteController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final meal = widget.meal;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      decoration: BoxDecoration(
-        color: NutriColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: meal.isConsumed ? NutriColors.primary : NutriColors.border,
-          width: meal.isConsumed ? 1.5 : 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Imagen
-          ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-            child: Container(
-              height: 150,
-              width: double.infinity,
-              color: NutriColors.inputFill,
-              child: const Icon(Icons.restaurant,
-                  color: NutriColors.textSecondary, size: 40),
-            ),
-          ),
-
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(meal.name,
-                          style: Theme.of(context).textTheme.titleMedium),
-                    ),
-                    const Icon(Icons.keyboard_arrow_down,
-                        color: NutriColors.textSecondary),
-                  ],
-                ),
-                const SizedBox(height: 8),
-
-                // Macros
-                Row(
-                  children: [
-                    _Macro(label: 'CAL', value: '${meal.calories ?? 0}'),
-                    const SizedBox(width: 12),
-                    _Macro(
-                        label: 'PROT',
-                        value: '${meal.proteinG?.toInt() ?? 0}g'),
-                    const SizedBox(width: 12),
-                    _Macro(
-                        label: 'CARB',
-                        value: '${meal.carbsG?.toInt() ?? 0}g'),
-                    const SizedBox(width: 12),
-                    _Macro(
-                        label: 'GRAS',
-                        value: '${meal.fatG?.toInt() ?? 0}g'),
-                  ],
-                ),
-                const SizedBox(height: 10),
-
-                // Botón consumido
-                ElevatedButton.icon(
-                  onPressed: widget.onToggleConsumed,
-                  icon: Icon(
-                    meal.isConsumed
-                        ? Icons.check_circle
-                        : Icons.check_circle_outline,
-                    size: 16,
-                  ),
-                  label: Text(
-                      meal.isConsumed ? 'Consumido' : 'Registrar como comido'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: meal.isConsumed
-                        ? NutriColors.primary
-                        : NutriColors.border,
-                    foregroundColor:
-                        meal.isConsumed ? Colors.white : NutriColors.textPrimary,
-                    minimumSize: const Size(double.infinity, 42),
-                  ),
-                ),
-                const SizedBox(height: 8),
-
-                // No lo voy a comer
-                GestureDetector(
-                  onTap: () => setState(() => _showNote = !_showNote),
-                  child: Text(
-                    'No lo voy a comer, ¿Qué comiste?',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: NutriColors.textSecondary,
-                        ),
-                  ),
-                ),
-
-                if (_showNote) ...[
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: _noteController,
-                    decoration: const InputDecoration(
-                      hintText: 'Ej: He cambiado el salmón por atún...',
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  OutlinedButton.icon(
-                    onPressed: () {},
-                    icon: const Icon(Icons.check_circle_outline, size: 14),
-                    label: const Text('Confirmar Comida'),
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size(double.infinity, 40),
-                      foregroundColor: NutriColors.textSecondary,
-                      side: const BorderSide(color: NutriColors.border),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Macro extends StatelessWidget {
-  final String label;
-  final String value;
-  const _Macro({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  fontSize: 10,
-                  color: NutriColors.textSecondary,
-                )),
-        Text(value,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                )),
-      ],
-    );
-  }
-}
 
 // ── Sección Medicación ────────────────────────────────────────────────────────
 

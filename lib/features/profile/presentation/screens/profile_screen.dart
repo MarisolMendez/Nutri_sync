@@ -119,7 +119,29 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   );
             },
             onViewProgress: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const ProgressScreen()),
+              PageRouteBuilder(
+                transitionDuration: const Duration(milliseconds: 260),
+                reverseTransitionDuration: const Duration(milliseconds: 200),
+                pageBuilder: (context, animation, secondaryAnimation) =>
+                    const ProgressScreen(),
+                transitionsBuilder:
+                    (context, animation, secondaryAnimation, child) {
+                  return SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(0.04, 0),
+                      end: Offset.zero,
+                    ).animate(CurvedAnimation(
+                      parent: animation,
+                      curve: Curves.easeOutCubic,
+                    )),
+                    child: FadeTransition(
+                      opacity:
+                          CurveTween(curve: Curves.easeIn).animate(animation),
+                      child: child,
+                    ),
+                  );
+                },
+              ),
             ),
             onLogout: _confirmLogout,
           ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../controllers/auth_controller.dart';
@@ -25,12 +26,14 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authControllerProvider);
 
-    // Si el usuario ya está autenticado, redirigir al dashboard
-    ref.listen<AuthState>(authControllerProvider, (_, state) {
-      if (state is AuthAuthenticated) {
-        context.go('/dashboard');
-      }
-    });
+    // Redirigir si ya está autenticado
+    if (authState is AuthAuthenticated) {
+      Future.microtask(() {
+        if (mounted) {
+          context.go('/dashboard');
+        }
+      });
+    }
 
     return Scaffold(
       body: Stack(
@@ -75,14 +78,10 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       // Logo nutria
-                      Image.asset(
-                        'assets/images/nutrisync_logo.png',
-                        height: 90,
-                        errorBuilder: (_, __, ___) => const Icon(
-                          Icons.eco_rounded,
-                          size: 80,
-                          color: NutriColors.primaryDark,
-                        ),
+                      SvgPicture.asset(
+                        'assets/images/nutrisync_logo.svg',
+                        height: 100,
+                        fit: BoxFit.contain,
                       ),
                       const SizedBox(height: 20),
 

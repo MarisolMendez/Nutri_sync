@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../domain/entities/mood_entity.dart';
 import '../controllers/mood_controller.dart';
@@ -50,7 +51,13 @@ class _MoodScreenState extends ConsumerState<MoodScreen> {
         title: const Text('Bienestar'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/dashboard');
+            }
+          },
         ),
         actions: [
           Stack(

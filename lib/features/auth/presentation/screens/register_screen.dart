@@ -28,33 +28,39 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     super.dispose();
   }
 
-  void _onRegister() {
+  void _onRegister() async {
     if (!_formKey.currentState!.validate()) return;
-    ref.read(authControllerProvider.notifier).register(
+    await ref.read(authControllerProvider.notifier).register(
           email: _emailController.text.trim(),
           password: _passwordController.text,
           name: _nameController.text.trim(),
         );
+
+    // Mostrar el consentimiento de privacidad inmediatamente después del registro,
+    // sin depender del listener que puede ser interceptado por WelcomeScreen.
+    final currentState = ref.read(authControllerProvider);
+    if (currentState is AuthAuthenticated && mounted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (_) => PrivacyConsentOverlay(
+            onAccept: () {
+              Navigator.of(context).pop(); // cierra el modal
+              if (!mounted) return;
+              // Reemplazar toda la navegación con el dashboard
+              context.go('/dashboard');
+            },
+          ),
+        );
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     ref.listen<AuthState>(authControllerProvider, (_, state) {
-      if (state is AuthAuthenticated) {
-        // El consentimiento de privacidad se muestra una sola vez,
-        // justo después del registro, antes de entrar al dashboard.
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          barrierColor: Colors.transparent,
-          builder: (_) => PrivacyConsentOverlay(
-            onAccept: () {
-              Navigator.of(context).pop(); // cierra el modal
-              context.go('/dashboard');
-            },
-          ),
-        );
-      }
       if (state is AuthError) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -87,194 +93,209 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           ),
 
           SafeArea(
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  // Flecha atrás
-                  Align(
-                    alignment: Alignment.topLeft,
-                    child: IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.white),
-                      onPressed: () => context.pop(),
-                    ),
+            child: Column(
+              children: [
+                // Flecha atrás arriba a la izquierda
+                Align(
+                  alignment: Alignment.topLeft,
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_back, color: Colors.white),
+                    onPressed: () => context.pop(),
                   ),
+                ),
 
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Bienvenido',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 28,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Crea una cuenta para continuar',
-                    style: TextStyle(color: Colors.white70, fontSize: 14),
-                  ),
-                  const SizedBox(height: 28),
-
-                  // Card formulario
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 28),
-                    child: Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
+                // Título y card centrados verticalmente
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        top: MediaQuery.of(context).size.height * 0.05,
+                        bottom: 24,
                       ),
-                      child: Form(
-                        key: _formKey,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            // Usuario
-                            Text(
-                              'Usuario',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(fontWeight: FontWeight.w600),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text(
+                            'Bienvenido',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 28,
+                              fontWeight: FontWeight.w700,
                             ),
-                            const SizedBox(height: 8),
-                            TextFormField(
-                              controller: _nameController,
-                              decoration: const InputDecoration(
-                                hintText: 'exemplo@email.com',
-                                prefixIcon:
-                                    Icon(Icons.person_outline, size: 18),
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Crea una cuenta para continuar',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 14,
+                            ),
+                          ),
+                          const SizedBox(height: 32),
+
+                          // Card formulario
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 28),
+                            child: Container(
+                              padding: const EdgeInsets.all(24),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(20),
                               ),
-                              validator: (v) {
-                                if (v == null || v.isEmpty) {
-                                  return 'Ingresa tu nombre';
-                                }
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: 16),
-
-                            // E-mail
-                            Text(
-                              'E-mail',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(fontWeight: FontWeight.w600),
-                            ),
-                            const SizedBox(height: 8),
-                            TextFormField(
-                              controller: _emailController,
-                              keyboardType: TextInputType.emailAddress,
-                              decoration: const InputDecoration(
-                                hintText: 'exemplo@email.com',
-                                prefixIcon:
-                                    Icon(Icons.email_outlined, size: 18),
-                              ),
-                              validator: (v) {
-                                if (v == null || v.isEmpty) {
-                                  return 'Ingresa tu correo';
-                                }
-                                if (!v.contains('@')) return 'Correo inválido';
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: 16),
-
-                            // Contraseña
-                            Text(
-                              'Contraseña',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(fontWeight: FontWeight.w600),
-                            ),
-                            const SizedBox(height: 8),
-                            TextFormField(
-                              controller: _passwordController,
-                              obscureText: _obscurePassword,
-                              decoration: InputDecoration(
-                                hintText: '········',
-                                prefixIcon:
-                                    const Icon(Icons.lock_outline, size: 18),
-                                suffixIcon: IconButton(
-                                  icon: Icon(
-                                    _obscurePassword
-                                        ? Icons.visibility_outlined
-                                        : Icons.visibility_off_outlined,
-                                    size: 18,
-                                  ),
-                                  onPressed: () => setState(
-                                    () =>
-                                        _obscurePassword = !_obscurePassword,
-                                  ),
-                                ),
-                              ),
-                              validator: (v) {
-                                if (v == null || v.isEmpty) {
-                                  return 'Ingresa una contraseña';
-                                }
-                                if (v.length < 6) return 'Mínimo 6 caracteres';
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: 24),
-
-                            // Botón Entrar
-                            ElevatedButton.icon(
-                              onPressed: isLoading ? null : _onRegister,
-                              icon: isLoading
-                                  ? const SizedBox(
-                                      height: 16,
-                                      width: 16,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: Colors.white,
-                                      ),
-                                    )
-                                  : const Icon(Icons.arrow_forward, size: 18),
-                              label: const Text('Entrar'),
-                            ),
-                            const SizedBox(height: 14),
-
-                            // Link iniciar sesión
-                            Center(
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    'Yo tienes cuenta? ',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodySmall
-                                        ?.copyWith(
-                                            color: NutriColors.textSecondary),
-                                  ),
-                                  GestureDetector(
-                                    onTap: () => context.pop(),
-                                    child: Text(
-                                      'Iniciar Sesión',
+                              child: Form(
+                                key: _formKey,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    // Usuario
+                                    Text(
+                                      'Usuario',
                                       style: Theme.of(context)
                                           .textTheme
-                                          .bodySmall
-                                          ?.copyWith(
-                                            color: NutriColors.primary,
-                                            fontWeight: FontWeight.w700,
-                                          ),
+                                          .bodyMedium
+                                          ?.copyWith(fontWeight: FontWeight.w600),
                                     ),
-                                  ),
-                                ],
+                                    const SizedBox(height: 8),
+                                    TextFormField(
+                                      controller: _nameController,
+                                      decoration: const InputDecoration(
+                                        hintText: 'exemplo@email.com',
+                                        prefixIcon:
+                                            Icon(Icons.person_outline, size: 18),
+                                      ),
+                                      validator: (v) {
+                                        if (v == null || v.isEmpty) {
+                                          return 'Ingresa tu nombre';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                    const SizedBox(height: 16),
+
+                                    // E-mail
+                                    Text(
+                                      'E-mail',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium
+                                          ?.copyWith(fontWeight: FontWeight.w600),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    TextFormField(
+                                      controller: _emailController,
+                                      keyboardType: TextInputType.emailAddress,
+                                      decoration: const InputDecoration(
+                                        hintText: 'exemplo@email.com',
+                                        prefixIcon:
+                                            Icon(Icons.email_outlined, size: 18),
+                                      ),
+                                      validator: (v) {
+                                        if (v == null || v.isEmpty) {
+                                          return 'Ingresa tu correo';
+                                        }
+                                        if (!v.contains('@')) return 'Correo inválido';
+                                        return null;
+                                      },
+                                    ),
+                                    const SizedBox(height: 16),
+
+                                    // Contraseña
+                                    Text(
+                                      'Contraseña',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium
+                                          ?.copyWith(fontWeight: FontWeight.w600),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    TextFormField(
+                                      controller: _passwordController,
+                                      obscureText: _obscurePassword,
+                                      decoration: InputDecoration(
+                                        hintText: '········',
+                                        prefixIcon:
+                                            const Icon(Icons.lock_outline, size: 18),
+                                        suffixIcon: IconButton(
+                                          icon: Icon(
+                                            _obscurePassword
+                                                ? Icons.visibility_outlined
+                                                : Icons.visibility_off_outlined,
+                                            size: 18,
+                                          ),
+                                          onPressed: () => setState(
+                                            () =>
+                                                _obscurePassword = !_obscurePassword,
+                                          ),
+                                        ),
+                                      ),
+                                      validator: (v) {
+                                        if (v == null || v.isEmpty) {
+                                          return 'Ingresa una contraseña';
+                                        }
+                                        if (v.length < 6) return 'Mínimo 6 caracteres';
+                                        return null;
+                                      },
+                                    ),
+                                    const SizedBox(height: 24),
+
+                                    // Botón Entrar
+                                    ElevatedButton.icon(
+                                      onPressed: isLoading ? null : _onRegister,
+                                      icon: isLoading
+                                          ? const SizedBox(
+                                              height: 16,
+                                              width: 16,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                color: Colors.white,
+                                              ),
+                                            )
+                                          : const Icon(Icons.arrow_forward, size: 18),
+                                      label: const Text('Entrar'),
+                                    ),
+                                    const SizedBox(height: 14),
+
+                                    // Link iniciar sesión
+                                    Center(
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Text(
+                                            'Yo tienes cuenta? ',
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodySmall
+                                                ?.copyWith(
+                                                    color: NutriColors.textSecondary),
+                                          ),
+                                          GestureDetector(
+                                            onTap: () => context.pop(),
+                                            child: Text(
+                                              'Iniciar Sesión',
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodySmall
+                                                  ?.copyWith(
+                                                    color: NutriColors.primary,
+                                                    fontWeight: FontWeight.w700,
+                                                  ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                  const SizedBox(height: 24),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ],

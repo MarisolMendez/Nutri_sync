@@ -61,8 +61,28 @@ class PrivacyConsentOverlay extends StatelessWidget {
                 const SizedBox(height: 12),
                 TextButton(
                   onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const PrivacyPolicyScreen(),
+                    PageRouteBuilder(
+                      transitionDuration: const Duration(milliseconds: 260),
+                      reverseTransitionDuration: const Duration(milliseconds: 200),
+                      pageBuilder: (context, animation, secondaryAnimation) =>
+                          const PrivacyPolicyScreen(),
+                      transitionsBuilder:
+                          (context, animation, secondaryAnimation, child) {
+                        return SlideTransition(
+                          position: Tween<Offset>(
+                            begin: const Offset(0.04, 0),
+                            end: Offset.zero,
+                          ).animate(CurvedAnimation(
+                            parent: animation,
+                            curve: Curves.easeOutCubic,
+                          )),
+                          child: FadeTransition(
+                            opacity:
+                                CurveTween(curve: Curves.easeIn).animate(animation),
+                            child: child,
+                          ),
+                        );
+                      },
                     ),
                   ),
                   child: Text(

@@ -1,21 +1,29 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme/app_theme.dart';
-import '../../hydration/presentation/screens/hydration_screen.dart';
-import '../../meal_plan/presentation/screens/weekly_meal_plan_screen.dart';
-import '../../medication/presentation/screens/medication_screen.dart';
-import '../../mood/presentation/screen/mood_screen.dart';
-import 'screens/dashboard_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:nutri_sync/core/theme/app_theme.dart';
+import 'package:nutri_sync/features/dashboard/presentation/controllers/dashboard_controller.dart';
+import 'package:nutri_sync/features/dashboard/presentation/screens/dashboard_screen.dart';
+import 'package:nutri_sync/features/hydration/presentation/controllers/hydration_controller.dart';
+import 'package:nutri_sync/features/hydration/presentation/screens/hydration_screen.dart';
+import 'package:nutri_sync/features/meal_plan/presentation/controllers/meal_plan_controller.dart';
+import 'package:nutri_sync/features/meal_plan/presentation/screens/weekly_meal_plan_screen.dart';
+import 'package:nutri_sync/features/medication/presentation/controllers/medication_controller.dart';
+import 'package:nutri_sync/features/medication/presentation/screens/medication_screen.dart';
+import 'package:nutri_sync/features/mood/presentation/controllers/mood_controller.dart';
+import 'package:nutri_sync/features/mood/presentation/screen/mood_screen.dart';
 
 /// Scaffold principal con bottom navigation bar de 5 tabs:
 /// Inicio, Comidas, Medicación, Ánimo, Hidratación.
-class MainScaffold extends StatefulWidget {
+/// Cada vez que se cambia de tab, se recarga automáticamente la data del mismo
+/// para mantener la información siempre actualizada sin requerir pull-to-refresh.
+class MainScaffold extends ConsumerStatefulWidget {
   const MainScaffold({super.key});
 
   @override
-  State<MainScaffold> createState() => _MainScaffoldState();
+  ConsumerState<MainScaffold> createState() => _MainScaffoldState();
 }
 
-class _MainScaffoldState extends State<MainScaffold> {
+class _MainScaffoldState extends ConsumerState<MainScaffold> {
   int _currentIndex = 0;
 
   final List<Widget> _screens = const [
@@ -50,6 +58,21 @@ class _MainScaffoldState extends State<MainScaffold> {
     'Hidratación',
   ];
 
+  void _reloadTab(int index) {
+    switch (index) {
+      case 0:
+        ref.read(dashboardControllerProvider.notifier).load();
+      case 1:
+        ref.read(mealPlanControllerProvider.notifier).load();
+      case 2:
+        ref.read(medicationControllerProvider.notifier).load();
+      case 3:
+        ref.read(moodControllerProvider.notifier).load();
+      case 4:
+        ref.read(hydrationControllerProvider.notifier).loadToday();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -59,7 +82,10 @@ class _MainScaffoldState extends State<MainScaffold> {
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
+        onTap: (index) {
+          setState(() => _currentIndex = index);
+          _reloadTab(index);
+        },
         type: BottomNavigationBarType.fixed,
         backgroundColor: const Color(0xFFDCEFE6),
         selectedItemColor: NutriColors.primary,

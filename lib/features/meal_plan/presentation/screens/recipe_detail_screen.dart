@@ -16,11 +16,13 @@ class RecipeDetailScreen extends ConsumerStatefulWidget {
 
 class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
   late List<IngredientEntity> _ingredients;
+  late bool _isConsumed;
 
   @override
   void initState() {
     super.initState();
     _ingredients = widget.meal.recipe?.ingredients.map((i) => i).toList() ?? [];
+    _isConsumed = widget.meal.isConsumed;
   }
 
   void _toggleIngredient(int index) {
@@ -52,12 +54,18 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
         RecipeDetailLoaded() => _RecipeContent(
             state: state,
             ingredients: _ingredients,
+            isConsumed: _isConsumed,
             onToggleIngredient: _toggleIngredient,
-            onRegister: () {
-              ref
+            onRegister: () async {
+              if (_isConsumed) return;
+
+              setState(() {
+                _isConsumed = true;
+              });
+
+              await ref
                   .read(mealPlanControllerProvider.notifier)
-                  .toggleMealConsumed(widget.meal);
-              Navigator.of(context).pop();
+                  .toggleMealConsumed(widget.meal.copyWith(isConsumed: true));
             },
           ),
         _ => const SizedBox(),
@@ -69,12 +77,14 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
 class _RecipeContent extends StatelessWidget {
   final RecipeDetailLoaded state;
   final List<IngredientEntity> ingredients;
+  final bool isConsumed;
   final void Function(int) onToggleIngredient;
   final VoidCallback onRegister;
 
   const _RecipeContent({
     required this.state,
     required this.ingredients,
+    required this.isConsumed,
     required this.onToggleIngredient,
     required this.onRegister,
   });
@@ -324,14 +334,18 @@ class _RecipeContent extends StatelessWidget {
                 ElevatedButton(
                   onPressed: onRegister,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: NutriColors.success,
+                    backgroundColor: isConsumed
+                        ? NutriColors.primary
+                        : NutriColors.success,
                     foregroundColor: NutriColors.textOnPrimary,
                     minimumSize: const Size(double.infinity, 44),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
                   ),
-                  child: const Text('Registrar como consumido'),
+                  child: Text(
+                    isConsumed ? 'Consumido' : 'Registrar como consumido',
+                  ),
                 ),
                 const SizedBox(height: 16),
               ],

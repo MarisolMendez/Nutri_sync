@@ -112,7 +112,7 @@ class DashboardController extends Notifier<DashboardState> {
   Future<void> toggleMealConsumed(MealEntity meal) async {
     await _updateMeal(UpdateMealParams(
       mealId: meal.id,
-      consumed: !meal.isConsumed,
+      consumed: meal.isConsumed,
     ));
     await load();
   }

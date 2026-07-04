@@ -125,6 +125,21 @@ class WeeklyPlanEntity extends Equatable {
   List<MealEntity> mealsForDay(int dayOfWeek) =>
       meals.where((m) => m.dayOfWeek == dayOfWeek).toList();
 
+  WeeklyPlanEntity copyWith({
+    int? id,
+    String? userId,
+    DateTime? weekStartDate,
+    String? nutritionistNotes,
+    List<MealEntity>? meals,
+  }) =>
+      WeeklyPlanEntity(
+        id: id ?? this.id,
+        userId: userId ?? this.userId,
+        weekStartDate: weekStartDate ?? this.weekStartDate,
+        nutritionistNotes: nutritionistNotes ?? this.nutritionistNotes,
+        meals: meals ?? this.meals,
+      );
+
   @override
   List<Object?> get props => [id, userId, weekStartDate];
 }

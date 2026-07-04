@@ -1,12 +1,12 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../domain/entities/meal_plan_entities.dart';
 import '../controllers/meal_plan_controller.dart';
 import '../controllers/meal_plan_state.dart';
-import 'recipe_detail_screen.dart';
 import '../widgets/voice_note_recorder.dart';
+import 'recipe_detail_screen.dart';
 
 class WeeklyMealPlanScreen extends ConsumerStatefulWidget {
   const WeeklyMealPlanScreen({super.key});
@@ -34,7 +34,13 @@ class _WeeklyMealPlanScreenState extends ConsumerState<WeeklyMealPlanScreen> {
         title: const Text('Mi Dieta'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/dashboard');
+            }
+          },
         ),
       ),
       backgroundColor: NutriColors.background,
@@ -51,13 +57,11 @@ class _WeeklyMealPlanScreenState extends ConsumerState<WeeklyMealPlanScreen> {
   }
 }
 
-// ── Contenido principal ───────────────────────────────────────────────────────
-
 class _MealPlanContent extends ConsumerWidget {
   final MealPlanLoaded state;
   const _MealPlanContent({required this.state});
 
-  static const _dayLabels = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+  static const _dayLabels = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -65,77 +69,100 @@ class _MealPlanContent extends ConsumerWidget {
     final monday = now.subtract(Duration(days: now.weekday - 1));
 
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // ── Selector de días ───────────────────────────────────────
-        Container(
-          color: NutriColors.surface,
-          padding: const EdgeInsets.symmetric(vertical: 12),
+        // ── Encabezado ────────────────────────────────────────────
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Recetario Semanal',
+                style: Theme.of(context).textTheme.headlineMedium,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Tu plan de alimentación personalizado',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: NutriColors.textSecondary,
+                    ),
+              ),
+            ],
+          ),
+        ),
+
+        // ── Selector de días — cards cuadradas ────────────────────
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: List.generate(6, (i) {
-              final dayNum = i + 1; // 1=Lun ... 6=Sáb
+              final dayNum = i + 1;
               final date = monday.add(Duration(days: i));
               final isSelected = state.selectedDay == dayNum;
 
-              return GestureDetector(
-                onTap: () => ref
-                    .read(mealPlanControllerProvider.notifier)
-                    .selectDay(dayNum),
-                child: Column(
-                  children: [
-                    Text(
-                      _dayLabels[i],
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: isSelected
-                                ? NutriColors.primary
-                                : NutriColors.textSecondary,
-                            fontWeight: isSelected
-                                ? FontWeight.w700
-                                : FontWeight.w400,
-                          ),
-                    ),
-                    const SizedBox(height: 4),
-                    Container(
-                      width: 32,
-                      height: 32,
+              return Expanded(
+                child: Padding(
+                  padding: EdgeInsets.only(right: i < 5 ? 6 : 0),
+                  child: GestureDetector(
+                    onTap: () => ref
+                        .read(mealPlanControllerProvider.notifier)
+                        .selectDay(dayNum),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
                       decoration: BoxDecoration(
                         color: isSelected
                             ? NutriColors.primary
-                            : Colors.transparent,
-                        shape: BoxShape.circle,
+                            : NutriColors.surface,
+                        borderRadius: BorderRadius.circular(14),
+                        border: isSelected
+                            ? null
+                            : Border.all(color: NutriColors.border),
                       ),
-                      child: Center(
-                        child: Text(
-                          '${date.day}',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: isSelected
-                                ? Colors.white
-                                : NutriColors.textPrimary,
+                      child: Column(
+                        children: [
+                          Text(
+                            _dayLabels[i],
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isSelected
+                                  ? Colors.white
+                                  : NutriColors.textSecondary,
+                            ),
                           ),
-                        ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${date.day}',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: isSelected
+                                  ? Colors.white
+                                  : NutriColors.textPrimary,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
+                  ),
                 ),
               );
             }),
           ),
         ),
 
-        // ── Lista de comidas del día ───────────────────────────────
+        const SizedBox(height: 16),
+
+        // ── Lista de comidas ───────────────────────────────────────
         Expanded(
           child: state.mealsForSelectedDay.isEmpty
-              ? const Center(
-                  child: Text('Sin comidas para este día'),
-                )
+              ? const Center(child: Text('Sin comidas para este día'))
               : ListView.builder(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
                   itemCount: state.mealsForSelectedDay.length,
                   itemBuilder: (context, i) {
                     final meal = state.mealsForSelectedDay[i];
-                    return _MealCard(meal: meal);
+                    return MealCard(meal: meal, showDetailsButton: true);
                   },
                 ),
         ),
@@ -146,21 +173,41 @@ class _MealPlanContent extends ConsumerWidget {
 
 // ── Card de comida ────────────────────────────────────────────────────────────
 
-class _MealCard extends ConsumerStatefulWidget {
+class MealCard extends ConsumerStatefulWidget {
   final MealEntity meal;
-  const _MealCard({required this.meal});
+  final bool showDetailsButton;
+  final void Function(MealEntity meal)? onToggleConsumed;
+
+  const MealCard({super.key, 
+    required this.meal,
+    this.showDetailsButton = false,
+    this.onToggleConsumed,
+  });
 
   @override
-  ConsumerState<_MealCard> createState() => _MealCardState();
+  ConsumerState<MealCard> createState() => _MealCardState();
 }
 
-class _MealCardState extends ConsumerState<_MealCard> {
-  bool _expanded = false;
+class _MealCardState extends ConsumerState<MealCard> {
+  bool _macrosExpanded = false;
+  bool _showNote = false;
+  bool _isConsumed = false;
   final _noteController = TextEditingController();
   String? _voiceNotePath;
 
-  static const _colorGray = Color(0xFF747571);
-  static const _colorTextGreenDark = Color(0xFF052016);
+  @override
+  void initState() {
+    super.initState();
+    _isConsumed = widget.meal.isConsumed;
+  }
+
+  @override
+  void didUpdateWidget(covariant MealCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.meal.isConsumed != widget.meal.isConsumed) {
+      _isConsumed = widget.meal.isConsumed;
+    }
+  }
 
   @override
   void dispose() {
@@ -168,12 +215,43 @@ class _MealCardState extends ConsumerState<_MealCard> {
     super.dispose();
   }
 
+  void _toggleConsumed() {
+    final nextValue = !_isConsumed;
+    setState(() => _isConsumed = nextValue);
+
+    final updatedMeal = widget.meal.copyWith(isConsumed: nextValue);
+
+    if (widget.onToggleConsumed != null) {
+      widget.onToggleConsumed!(updatedMeal);
+    } else {
+      ref
+          .read(mealPlanControllerProvider.notifier)
+          .toggleMealConsumed(updatedMeal);
+    }
+  }
+
+  String _mealTypeLabel(String mealType) {
+    switch (mealType.toLowerCase()) {
+      case 'breakfast':
+        return 'Desayuno';
+      case 'lunch':
+        return 'Comida';
+      case 'snack':
+        return 'Colación';
+      case 'dinner':
+        return 'Cena';
+      default:
+        return mealType;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final meal = widget.meal;
+    final meal = widget.meal.copyWith(isConsumed: _isConsumed);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: NutriColors.surface,
         borderRadius: BorderRadius.circular(16),
@@ -185,32 +263,54 @@ class _MealCardState extends ConsumerState<_MealCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Imagen
-          if (meal.imageUrl != null)
-            ClipRRect(
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(16)),
-              child: CachedNetworkImage(
-                imageUrl: meal.imageUrl!,
-                height: 160,
-                width: double.infinity,
-                fit: BoxFit.cover,
-                errorWidget: (_, __, ___) => Container(
-                  height: 160,
-                  color: NutriColors.inputFill,
-                  child: const Icon(Icons.restaurant,
-                      color: NutriColors.textSecondary, size: 40),
+          // ── Imagen con chip de tipo de comida ─────────────────────
+          Stack(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: meal.imageUrl != null
+                    ? Image.network(
+                        meal.imageUrl!,
+                        height: 140,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => _imageFallback(),
+                      )
+                    : _imageFallback(),
+              ),
+              Positioned(
+                top: 10,
+                left: 10,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.92),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    _mealTypeLabel(meal.mealType),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: NutriColors.textPrimary,
+                    ),
+                  ),
                 ),
               ),
-            ),
+            ],
+          ),
 
+          const SizedBox(height: 14),
+
+          // ── Nombre + flecha macros ────────────────────────────────
           Padding(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.symmetric(horizontal: 10),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Nombre
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
                       child: Text(
@@ -218,160 +318,217 @@ class _MealCardState extends ConsumerState<_MealCard> {
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-
-                // Macros
-                Row(
-                  children: [
-                    _MacroChip(label: 'CAL', value: '${meal.calories ?? 0}'),
-                    const SizedBox(width: 8),
-                    _MacroChip(
-                        label: 'PROT',
-                        value: '${meal.proteinG?.toInt() ?? 0}g'),
-                    const SizedBox(width: 8),
-                    _MacroChip(
-                        label: 'CARB',
-                        value: '${meal.carbsG?.toInt() ?? 0}g'),
-                    const SizedBox(width: 8),
-                    _MacroChip(
-                        label: 'GRAS',
-                        value: '${meal.fatG?.toInt() ?? 0}g'),
-                  ],
-                ),
-                const SizedBox(height: 12),
-
-                // Botón Registar / Consumido
-                if (meal.isConsumed)
-                  ElevatedButton.icon(
-                    onPressed: () => ref
-                        .read(mealPlanControllerProvider.notifier)
-                        .toggleMealConsumed(meal),
-                    icon: const Icon(Icons.check_circle_outline, size: 16),
-                    label: const Text('Consumido'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: NutriColors.success,
-                      foregroundColor: NutriColors.textOnPrimary,
-                      minimumSize: const Size(double.infinity, 44),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                    GestureDetector(
+                      onTap: () => setState(
+                          () => _macrosExpanded = !_macrosExpanded),
+                      child: Icon(
+                        _macrosExpanded
+                            ? Icons.keyboard_arrow_up
+                            : Icons.keyboard_arrow_down,
+                        color: NutriColors.textSecondary,
                       ),
                     ),
-                  )
-                else
-                  ElevatedButton.icon(
-                    onPressed: () => ref
-                        .read(mealPlanControllerProvider.notifier)
-                        .toggleMealConsumed(meal),
-                    icon: const Icon(Icons.check_circle_outline, size: 16),
-                    label: const Text('Registrar como comido'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _colorGray.withValues(alpha: 0.66),
-                      foregroundColor: NutriColors.textOnPrimary,
-                      minimumSize: const Size(double.infinity, 44),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
+                  ],
+                ),
+
+                // ── Macros — se muestran al expandir ───────────────
+                if (_macrosExpanded) ...[
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      _MacroChip(
+                          label: 'CAL',
+                          value: '${meal.calories ?? 0}'),
+                      const SizedBox(width: 8),
+                      _MacroChip(
+                          label: 'PROT',
+                          value: '${meal.proteinG?.toInt() ?? 0}g'),
+                      const SizedBox(width: 8),
+                      _MacroChip(
+                          label: 'CARB',
+                          value: '${meal.carbsG?.toInt() ?? 0}g'),
+                      const SizedBox(width: 8),
+                      _MacroChip(
+                          label: 'GRAS',
+                          value: '${meal.fatG?.toInt() ?? 0}g'),
+                    ],
+                  ),
+                ],
+
+                const SizedBox(height: 16),
+
+                // ── Botón de acción ────────────────────────────────
+                ElevatedButton.icon(
+                  onPressed: _toggleConsumed,
+                  icon: Icon(
+                    meal.isConsumed
+                        ? Icons.check_circle
+                        : Icons.check_circle_outline,
+                    size: 18,
+                  ),
+                  label: Text(meal.isConsumed
+                      ? 'Consumido'
+                      : 'Registrar como comido'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: meal.isConsumed
+                        ? NutriColors.primary
+                        : NutriColors.border,
+                    foregroundColor: meal.isConsumed
+                        ? Colors.white
+                        : NutriColors.textPrimary,
+                    minimumSize: const Size(double.infinity, 52),
+                    textStyle: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
+                ),
 
-                // Botón Detalles — siempre verde, nunca cambia
-                if (meal.recipe != null) ...[
+                // ── Botón detalles — solo en Mi Dieta ─────────────
+                if (widget.showDetailsButton) ...[
                   const SizedBox(height: 8),
-                  ElevatedButton.icon(
+                  OutlinedButton.icon(
                     onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              RecipeDetailScreen(meal: meal),
-                        ),
-                      );
+                      if (meal.recipe != null) {
+                        Navigator.of(context).push(
+                          PageRouteBuilder(
+                            transitionDuration: const Duration(milliseconds: 260),
+                            reverseTransitionDuration: const Duration(milliseconds: 200),
+                            pageBuilder: (context, animation, secondaryAnimation) =>
+                                RecipeDetailScreen(meal: meal),
+                            transitionsBuilder:
+                                (context, animation, secondaryAnimation, child) {
+                              return SlideTransition(
+                                position: Tween<Offset>(
+                                  begin: const Offset(0.04, 0),
+                                  end: Offset.zero,
+                                ).animate(CurvedAnimation(
+                                  parent: animation,
+                                  curve: Curves.easeOutCubic,
+                                )),
+                                child: FadeTransition(
+                                  opacity: CurveTween(curve: Curves.easeIn)
+                                      .animate(animation),
+                                  child: child,
+                                ),
+                              );
+                            },
+                          ),
+                        );
+                      }
                     },
-                    icon: const Icon(Icons.restaurant_menu, size: 16),
-                    label: const Text('Detalles'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: NutriColors.success,
-                      foregroundColor: NutriColors.textOnPrimary,
-                      minimumSize: const Size(double.infinity, 44),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
+                    icon: const Icon(Icons.receipt_long_outlined, size: 16),
+                    label: const Text('Ver detalles'),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(double.infinity, 48),
+                      foregroundColor: NutriColors.primary,
+                      side: const BorderSide(color: NutriColors.primary),
                     ),
                   ),
                 ],
 
-                // No lo voy a comer
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
+
+                // ── No lo voy a comer ──────────────────────────────
                 GestureDetector(
-                  onTap: () => setState(() => _expanded = !_expanded),
-                  child: Text(
-                    'No lo voy a comer, ¿Qué comiste?',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: _colorTextGreenDark,
-                        ),
+                  onTap: () =>
+                      setState(() => _showNote = !_showNote),
+                  child: Center(
+                    child: Text(
+                      'No lo voy a comer, ¿Qué comiste?',
+                      style:
+                          Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: NutriColors.textPrimary,
+                                fontWeight: FontWeight.w500,
+                              ),
+                    ),
                   ),
                 ),
 
-                if (_expanded) ...[
-                  const SizedBox(height: 8),
+                if (_showNote) ...[
+                  const SizedBox(height: 12),
                   TextField(
                     controller: _noteController,
                     decoration: const InputDecoration(
-                      hintText: 'Ej: He cambiado el salmón por atún...',
+                      hintText:
+                          'Ej: He cambiado el salmón por atún...',
                     ),
                   ),
                   const SizedBox(height: 8),
                   VoiceNoteRecorder(
-                    onRecorded: (path) {
-                      _voiceNotePath = path;
-                    },
+                    onRecorded: (path) => _voiceNotePath = path,
                   ),
                   const SizedBox(height: 8),
-                  ElevatedButton.icon(
-                    onPressed: () {},
-                    icon: const Icon(Icons.check_circle_outline, size: 16),
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      ref
+                          .read(mealPlanControllerProvider.notifier)
+                          .saveSubstituteNote(
+                            mealId: meal.id,
+                            note: _noteController.text.isEmpty
+                                ? null
+                                : _noteController.text,
+                            voiceNotePath: _voiceNotePath,
+                          );
+                      setState(() => _showNote = false);
+                    },
+                    icon: const Icon(Icons.check_circle_outline,
+                        size: 14),
                     label: const Text('Confirmar Comida'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _colorGray.withValues(alpha: 0.66),
-                      foregroundColor: NutriColors.textOnPrimary,
+                    style: OutlinedButton.styleFrom(
                       minimumSize: const Size(double.infinity, 44),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
+                      foregroundColor: NutriColors.textSecondary,
+                      side: const BorderSide(color: NutriColors.border),
                     ),
                   ),
                 ],
               ],
             ),
           ),
+
+          const SizedBox(height: 4),
         ],
       ),
     );
   }
+
+  Widget _imageFallback() => Container(
+        height: 140,
+        width: double.infinity,
+        color: NutriColors.inputFill,
+        child: const Icon(Icons.restaurant,
+            color: NutriColors.textSecondary, size: 36),
+      );
 }
+
+// ── Macro chip ────────────────────────────────────────────────────────────────
 
 class _MacroChip extends StatelessWidget {
   final String label;
   final String value;
-
   const _MacroChip({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(label,
-            style: Theme.of(context)
-                .textTheme
-                .bodySmall
-                ?.copyWith(color: NutriColors.textSecondary, fontSize: 10)),
-        Text(value,
-            style: Theme.of(context)
-                .textTheme
-                .bodyMedium
-                ?.copyWith(fontWeight: FontWeight.w700)),
-      ],
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF0EDE8),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          children: [
+            Text(label,
+                style: const TextStyle(
+                    fontSize: 11, color: NutriColors.textSecondary)),
+            const SizedBox(height: 2),
+            Text(value,
+                style: const TextStyle(
+                    fontSize: 16, fontWeight: FontWeight.w700)),
+          ],
+        ),
+      ),
     );
   }
 }

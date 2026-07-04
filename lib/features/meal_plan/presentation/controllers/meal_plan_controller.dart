@@ -78,11 +78,54 @@ class MealPlanController extends Notifier<MealPlanState> {
     }
   }
 
+  MealPlanLoaded _applyConsumedUpdate(MealPlanLoaded currentState, MealEntity meal) {
+    final updatedMeals = currentState.plan.meals.map((existingMeal) {
+      if (existingMeal.id != meal.id) return existingMeal;
+      return existingMeal.copyWith(isConsumed: !existingMeal.isConsumed);
+    }).toList();
+
+    return currentState.copyWith(
+      plan: currentState.plan.copyWith(meals: updatedMeals),
+    );
+  }
+
   Future<void> toggleMealConsumed(MealEntity meal) async {
+    final previousState = state is MealPlanLoaded ? state as MealPlanLoaded : null;
+
+    if (previousState != null) {
+      state = _applyConsumedUpdate(previousState, meal);
+    }
+
     final result = await _updateMeal(
       UpdateMealParams(
         mealId: meal.id,
-        consumed: !meal.isConsumed,
+        consumed: meal.isConsumed,
+      ),
+    );
+
+    result.fold(
+      (failure) {
+        if (previousState != null) {
+          state = previousState;
+        } else {
+          state = MealPlanError(failure.message);
+        }
+      },
+      (_) => load(),
+    );
+  }
+
+  Future<void> saveSubstituteNote({
+    required int mealId,
+    String? note,
+    String? voiceNotePath,
+  }) async {
+    final result = await _saveSubstituteNote(
+      SaveSubstituteNoteParams(
+        mealId: mealId,
+        consumed: true,
+        note: note,
+        voiceNotePath: voiceNotePath,
       ),
     );
     result.fold(
