@@ -37,18 +37,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         backgroundColor: NutriColors.primaryDark,
         title: Row(
           children: [
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: Colors.white24,
-              child: ClipOval(
-                child: Image.asset(
-                  'assets/images/nutrisync_logo.png',
-                  width: 32,
-                  height: 32,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) =>
-                      const Icon(Icons.eco, color: Colors.white, size: 18),
-                ),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Image.asset(
+                'assets/images/logo_nutrysinc.png',
+                width: 32,
+                height: 32,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) =>
+                    const Icon(Icons.eco, color: Colors.white, size: 18),
               ),
             ),
             const SizedBox(width: 10),
@@ -165,9 +162,9 @@ class _DashboardContent extends ConsumerWidget {
                 (meal) => MealCard(
                   meal: meal,
                   showDetailsButton: false,
-                  onToggleConsumed: (m) => ref
+                  onToggleConsumed: (_) => ref
                       .read(dashboardControllerProvider.notifier)
-                      .toggleMealConsumed(m),
+                      .toggleMealConsumed(meal),
                 ),
               ),
             const SizedBox(height: 20),

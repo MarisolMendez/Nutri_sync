@@ -216,17 +216,14 @@ class _MealCardState extends ConsumerState<MealCard> {
   }
 
   void _toggleConsumed() {
-    final nextValue = !_isConsumed;
-    setState(() => _isConsumed = nextValue);
-
-    final updatedMeal = widget.meal.copyWith(isConsumed: nextValue);
-
     if (widget.onToggleConsumed != null) {
-      widget.onToggleConsumed!(updatedMeal);
+      final nextValue = !_isConsumed;
+      setState(() => _isConsumed = nextValue);
+      widget.onToggleConsumed!(widget.meal.copyWith(isConsumed: nextValue));
     } else {
       ref
           .read(mealPlanControllerProvider.notifier)
-          .toggleMealConsumed(updatedMeal);
+          .toggleMealConsumed(widget.meal);
     }
   }
 

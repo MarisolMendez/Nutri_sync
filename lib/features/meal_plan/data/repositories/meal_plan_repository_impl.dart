@@ -1,4 +1,5 @@
 import 'package:dartz/dartz.dart';
+import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/network/network_info.dart';
 import '../../domain/entities/meal_plan_entities.dart';
@@ -47,8 +48,10 @@ class MealPlanRepositoryImpl implements MealPlanRepository {
         );
       }
       return const Right(null);
+    } on DatabaseException catch (e) {
+      return Left(DatabaseFailure(e.message));
     } catch (e) {
-      return Left(DatabaseFailure('Error al actualizar comida: $e'));
+      return Left(UnexpectedFailure(e.toString()));
     }
   }
 

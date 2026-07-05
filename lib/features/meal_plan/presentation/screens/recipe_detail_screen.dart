@@ -65,7 +65,7 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
 
               await ref
                   .read(mealPlanControllerProvider.notifier)
-                  .toggleMealConsumed(widget.meal.copyWith(isConsumed: true));
+                  .toggleMealConsumed(widget.meal);
             },
           ),
         _ => const SizedBox(),

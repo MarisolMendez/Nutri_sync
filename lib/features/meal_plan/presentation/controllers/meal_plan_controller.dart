@@ -78,10 +78,14 @@ class MealPlanController extends Notifier<MealPlanState> {
     }
   }
 
-  MealPlanLoaded _applyConsumedUpdate(MealPlanLoaded currentState, MealEntity meal) {
+  MealPlanLoaded _applyConsumedUpdate(
+    MealPlanLoaded currentState,
+    MealEntity meal,
+    bool consumed,
+  ) {
     final updatedMeals = currentState.plan.meals.map((existingMeal) {
       if (existingMeal.id != meal.id) return existingMeal;
-      return existingMeal.copyWith(isConsumed: !existingMeal.isConsumed);
+      return existingMeal.copyWith(isConsumed: consumed);
     }).toList();
 
     return currentState.copyWith(
@@ -90,27 +94,17 @@ class MealPlanController extends Notifier<MealPlanState> {
   }
 
   Future<void> toggleMealConsumed(MealEntity meal) async {
-    final previousState = state is MealPlanLoaded ? state as MealPlanLoaded : null;
-
-    if (previousState != null) {
-      state = _applyConsumedUpdate(previousState, meal);
-    }
-
+    // 1. Guarda en Drift inmediatamente con el valor INVERTIDO
     final result = await _updateMeal(
       UpdateMealParams(
         mealId: meal.id,
-        consumed: meal.isConsumed,
+        consumed: !meal.isConsumed, // ← invertir siempre
       ),
     );
 
+    // 2. Solo recarga si el guardado fue exitoso
     result.fold(
-      (failure) {
-        if (previousState != null) {
-          state = previousState;
-        } else {
-          state = MealPlanError(failure.message);
-        }
-      },
+      (failure) => state = MealPlanError(failure.message),
       (_) => load(),
     );
   }

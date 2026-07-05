@@ -110,11 +110,19 @@ class DashboardController extends Notifier<DashboardState> {
   }
 
   Future<void> toggleMealConsumed(MealEntity meal) async {
-    await _updateMeal(UpdateMealParams(
-      mealId: meal.id,
-      consumed: meal.isConsumed,
-    ));
-    await load();
+    // 1. Guarda en Drift inmediatamente con el valor INVERTIDO
+    final result = await _updateMeal(
+      UpdateMealParams(
+        mealId: meal.id,
+        consumed: !meal.isConsumed, // ← CRÍTICO: invertir el estado actual
+      ),
+    );
+
+    // 2. Solo recarga si el guardado fue exitoso
+    result.fold(
+      (failure) => state = DashboardError(failure.message),
+      (_) => load(), // recarga el dashboard desde Drift para reflejar el cambio
+    );
   }
 
   Future<void> toggleMedicationTaken(int medicationId) async {
