@@ -4,9 +4,10 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../hydration/domain/entities/hydration_entity.dart';
-import '../../../meal_plan/domain/entities/meal_plan_entities.dart';
+import '../../../meal_plan/presentation/screens/weekly_meal_plan_screen.dart';
 import '../../../medication/domain/entities/medication_entity.dart';
 import '../../../mood/domain/entities/mood_entity.dart';
+import '../../../profile/presentation/screens/profile_screen.dart';
 import '../controllers/dashboard_controller.dart';
 import '../controllers/dashboard_state.dart';
 
@@ -36,20 +37,20 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         backgroundColor: NutriColors.primaryDark,
         title: Row(
           children: [
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: Colors.white24,
-              child: ClipOval(
-                child: Image.asset(
-                  'assets/images/nutrisync_logo.png',
-                  width: 32,
-                  height: 32,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) =>
-                      const Icon(Icons.eco, color: Colors.white, size: 18),
+              CircleAvatar(
+                radius: 16,
+                backgroundColor: NutriColors.primary,
+                child: ClipOval(
+                  child: Image.asset(
+                    'assets/images/logo_nutrysinc.png',
+                    width: 32,
+                    height: 32,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) =>
+                        const Icon(Icons.eco, color: Colors.white, size: 18),
+                  ),
                 ),
               ),
-            ),
             const SizedBox(width: 10),
             const Text('NutriSync',
                 style: TextStyle(color: Colors.white, fontSize: 18)),
@@ -62,7 +63,29 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.person_outline, color: Colors.white),
-          onPressed: () => context.push('/profile'),
+          onPressed: () => Navigator.of(context).push(
+            PageRouteBuilder(
+              transitionDuration: const Duration(milliseconds: 260),
+              reverseTransitionDuration: const Duration(milliseconds: 200),
+              pageBuilder: (context, animation, secondaryAnimation) =>
+                  const ProfileScreen(),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                return SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(0.04, 0),
+                    end: Offset.zero,
+                  ).animate(CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeOutCubic,
+                  )),
+                  child: FadeTransition(
+                    opacity: CurveTween(curve: Curves.easeIn).animate(animation),
+                    child: child,
+                  ),
+                );
+              },
+            ),
+          ),
           ),
           const SizedBox(width: 4),
         ],
@@ -140,7 +163,7 @@ class _DashboardContent extends ConsumerWidget {
 
             // Selector días compacto
             _DaySelector(selectedDay: state.date.weekday),
-            const SizedBox(height: 12),
+            const SizedBox(height: 24),
 
             // Cards de comidas
             if (state.todayMeals.isEmpty)
@@ -161,13 +184,17 @@ class _DashboardContent extends ConsumerWidget {
                 ),
               )
             else
-              ...state.todayMeals.map(
-                (meal) => _DashboardMealCard(
-                  meal: meal,
-                  onToggleConsumed: () => ref
-                      .read(dashboardControllerProvider.notifier)
-                      .toggleMealConsumed(meal),
-                ),
+              Column(
+                children: state.todayMeals.map(
+                  (meal) => MealCard(
+                    key: ValueKey(meal.id),
+                    meal: meal,
+                    showDetailsButton: false,
+                    onToggleConsumed: () => ref
+                        .read(dashboardControllerProvider.notifier)
+                        .toggleMealConsumed(meal),
+                  ),
+                ).toList(),
               ),
             const SizedBox(height: 20),
 
@@ -310,13 +337,13 @@ class _HydrationCard extends StatelessWidget {
   }
 }
 
-// ── Selector de días compacto ─────────────────────────────────────────────────
+// ── Selector de días (mismo diseño que Mi Dieta) ──────────────────────────────
 
 class _DaySelector extends StatelessWidget {
   final int selectedDay;
   const _DaySelector({required this.selectedDay});
 
-  static const _days = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+  static const _dayLabels = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
   @override
   Widget build(BuildContext context) {
@@ -324,225 +351,46 @@ class _DaySelector extends StatelessWidget {
     final monday = now.subtract(Duration(days: now.weekday - 1));
 
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: List.generate(6, (i) {
+      children: List.generate(7, (i) {
+        final dayNum = i + 1;
         final date = monday.add(Duration(days: i));
-        final isSelected = selectedDay == i + 1;
-
-        return Column(
-          children: [
-            Text(
-              _days[i],
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: isSelected
-                        ? NutriColors.primary
-                        : NutriColors.textSecondary,
-                    fontWeight: isSelected
-                        ? FontWeight.w700
-                        : FontWeight.w400,
-                    fontSize: 11,
-                  ),
-            ),
-            const SizedBox(height: 4),
-            Container(
-              width: 28,
-              height: 28,
+        final isSelected = selectedDay == dayNum;
+        return Expanded(
+          child: Padding(
+            padding: EdgeInsets.only(right: i < 6 ? 6 : 0),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 10),
               decoration: BoxDecoration(
-                color: isSelected ? NutriColors.primary : Colors.transparent,
-                shape: BoxShape.circle,
+                color: isSelected
+                    ? NutriColors.primary
+                    : NutriColors.surface,
+                borderRadius: BorderRadius.circular(14),
+                border: isSelected
+                    ? null
+                    : Border.all(color: NutriColors.border),
               ),
-              child: Center(
-                child: Text(
-                  '${date.day}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: isSelected
-                        ? Colors.white
-                        : NutriColors.textPrimary,
-                  ),
-                ),
+              child: Column(
+                children: [
+                  Text(_dayLabels[i],
+                      style: TextStyle(
+                          fontSize: 12,
+                          color: isSelected
+                              ? Colors.white
+                              : NutriColors.textSecondary)),
+                  const SizedBox(height: 4),
+                  Text('${date.day}',
+                      style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: isSelected
+                              ? Colors.white
+                              : NutriColors.textPrimary)),
+                ],
               ),
             ),
-          ],
+          ),
         );
       }),
-    );
-  }
-}
-
-// ── Card de comida en dashboard ───────────────────────────────────────────────
-
-class _DashboardMealCard extends StatefulWidget {
-  final MealEntity meal;
-  final VoidCallback onToggleConsumed;
-
-  const _DashboardMealCard({
-    required this.meal,
-    required this.onToggleConsumed,
-  });
-
-  @override
-  State<_DashboardMealCard> createState() => _DashboardMealCardState();
-}
-
-class _DashboardMealCardState extends State<_DashboardMealCard> {
-  bool _showNote = false;
-  final _noteController = TextEditingController();
-
-  @override
-  void dispose() {
-    _noteController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final meal = widget.meal;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      decoration: BoxDecoration(
-        color: NutriColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: meal.isConsumed ? NutriColors.primary : NutriColors.border,
-          width: meal.isConsumed ? 1.5 : 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Imagen
-          ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-            child: Container(
-              height: 150,
-              width: double.infinity,
-              color: NutriColors.inputFill,
-              child: const Icon(Icons.restaurant,
-                  color: NutriColors.textSecondary, size: 40),
-            ),
-          ),
-
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(meal.name,
-                          style: Theme.of(context).textTheme.titleMedium),
-                    ),
-                    const Icon(Icons.keyboard_arrow_down,
-                        color: NutriColors.textSecondary),
-                  ],
-                ),
-                const SizedBox(height: 8),
-
-                // Macros
-                Row(
-                  children: [
-                    _Macro(label: 'CAL', value: '${meal.calories ?? 0}'),
-                    const SizedBox(width: 12),
-                    _Macro(
-                        label: 'PROT',
-                        value: '${meal.proteinG?.toInt() ?? 0}g'),
-                    const SizedBox(width: 12),
-                    _Macro(
-                        label: 'CARB',
-                        value: '${meal.carbsG?.toInt() ?? 0}g'),
-                    const SizedBox(width: 12),
-                    _Macro(
-                        label: 'GRAS',
-                        value: '${meal.fatG?.toInt() ?? 0}g'),
-                  ],
-                ),
-                const SizedBox(height: 10),
-
-                // Botón consumido
-                ElevatedButton.icon(
-                  onPressed: widget.onToggleConsumed,
-                  icon: Icon(
-                    meal.isConsumed
-                        ? Icons.check_circle
-                        : Icons.check_circle_outline,
-                    size: 16,
-                  ),
-                  label: Text(
-                      meal.isConsumed ? 'Consumido' : 'Registrar como comido'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: meal.isConsumed
-                        ? NutriColors.primary
-                        : NutriColors.border,
-                    foregroundColor:
-                        meal.isConsumed ? Colors.white : NutriColors.textPrimary,
-                    minimumSize: const Size(double.infinity, 42),
-                  ),
-                ),
-                const SizedBox(height: 8),
-
-                // No lo voy a comer
-                GestureDetector(
-                  onTap: () => setState(() => _showNote = !_showNote),
-                  child: Text(
-                    'No lo voy a comer, ¿Qué comiste?',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: NutriColors.textSecondary,
-                        ),
-                  ),
-                ),
-
-                if (_showNote) ...[
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: _noteController,
-                    decoration: const InputDecoration(
-                      hintText: 'Ej: He cambiado el salmón por atún...',
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  OutlinedButton.icon(
-                    onPressed: () {},
-                    icon: const Icon(Icons.check_circle_outline, size: 14),
-                    label: const Text('Confirmar Comida'),
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size(double.infinity, 40),
-                      foregroundColor: NutriColors.textSecondary,
-                      side: const BorderSide(color: NutriColors.border),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Macro extends StatelessWidget {
-  final String label;
-  final String value;
-  const _Macro({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  fontSize: 10,
-                  color: NutriColors.textSecondary,
-                )),
-        Text(value,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                )),
-      ],
     );
   }
 }

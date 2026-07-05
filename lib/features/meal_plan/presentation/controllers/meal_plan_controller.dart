@@ -90,4 +90,23 @@ class MealPlanController extends Notifier<MealPlanState> {
       (_) => load(),
     );
   }
+
+  Future<void> saveSubstituteNote({
+    required int mealId,
+    String? note,
+    String? voiceNotePath,
+  }) async {
+    final result = await _saveSubstituteNote(
+      SaveSubstituteNoteParams(
+        mealId: mealId,
+        consumed: true,
+        note: note,
+        voiceNotePath: voiceNotePath,
+      ),
+    );
+    result.fold(
+      (failure) => state = MealPlanError(failure.message),
+      (_) => load(),
+    );
+  }
 }

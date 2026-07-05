@@ -29,7 +29,7 @@ Future<void> seedSampleData(AppDatabase db) async {
 
   // ── Comidas por día (Lun=1 … Dom=7) ─────────────────────────────────
   final meals = <_MealSeed>[
-    // ── Lunes ─────────────────────────────────────────────────────────
+    // ── Lunes (día 1) ─────────────────────────────────────────────────
     _MealSeed(
       dayOfWeek: 1,
       mealType: 'breakfast',
@@ -132,7 +132,7 @@ Future<void> seedSampleData(AppDatabase db) async {
         observations: null,
       ),
     ),
-    // ── Martes ────────────────────────────────────────────────────────
+    // ── Martes (día 2) ────────────────────────────────────────────────
     _MealSeed(
       dayOfWeek: 2,
       mealType: 'breakfast',
@@ -238,6 +238,26 @@ Future<void> seedSampleData(AppDatabase db) async {
         observations: null,
       ),
     ),
+    // ── Miércoles (día 3) ─────────────────────────────────────────────
+    _MealSeed(dayOfWeek: 3, mealType: 'breakfast', name: 'Avena con frutos rojos', calories: 310, proteinG: 20, carbsG: 48, fatG: 5),
+    _MealSeed(dayOfWeek: 3, mealType: 'lunch', name: 'Bowl de quinoa y verduras', calories: 400, proteinG: 15, carbsG: 55, fatG: 12),
+    _MealSeed(dayOfWeek: 3, mealType: 'dinner', name: 'Tostadas de tinga de pollo', calories: 340, proteinG: 24, carbsG: 30, fatG: 14),
+    // ── Jueves (día 4) ────────────────────────────────────────────────
+    _MealSeed(dayOfWeek: 4, mealType: 'breakfast', name: 'Chilaquiles saludables', calories: 350, proteinG: 22, carbsG: 40, fatG: 12),
+    _MealSeed(dayOfWeek: 4, mealType: 'lunch', name: 'Pechuga empanizada al horno', calories: 390, proteinG: 30, carbsG: 35, fatG: 10),
+    _MealSeed(dayOfWeek: 4, mealType: 'dinner', name: 'Sopa de verduras con pollo', calories: 260, proteinG: 20, carbsG: 22, fatG: 8),
+    // ── Viernes (día 5) ───────────────────────────────────────────────
+    _MealSeed(dayOfWeek: 5, mealType: 'breakfast', name: 'Hotcakes de avena', calories: 300, proteinG: 18, carbsG: 42, fatG: 8),
+    _MealSeed(dayOfWeek: 5, mealType: 'lunch', name: 'Pescado a la veracruzana', calories: 380, proteinG: 28, carbsG: 20, fatG: 18),
+    _MealSeed(dayOfWeek: 5, mealType: 'dinner', name: 'Ensalada César de pollo', calories: 290, proteinG: 24, carbsG: 12, fatG: 16),
+    // ── Sábado (día 6) ────────────────────────────────────────────────
+    _MealSeed(dayOfWeek: 6, mealType: 'breakfast', name: 'Huevos revueltos con verduras', calories: 280, proteinG: 24, carbsG: 10, fatG: 16),
+    _MealSeed(dayOfWeek: 6, mealType: 'lunch', name: 'Lomo de cerdo con puré de camote', calories: 450, proteinG: 34, carbsG: 38, fatG: 16),
+    _MealSeed(dayOfWeek: 6, mealType: 'dinner', name: 'Pizza de coliflor', calories: 270, proteinG: 18, carbsG: 20, fatG: 14),
+    // ── Domingo (día 7) ───────────────────────────────────────────────
+    _MealSeed(dayOfWeek: 7, mealType: 'breakfast', name: 'Pan tostado con aguacate y huevo', calories: 330, proteinG: 22, carbsG: 28, fatG: 16),
+    _MealSeed(dayOfWeek: 7, mealType: 'lunch', name: 'Pollo al curry con arroz integral', calories: 460, proteinG: 32, carbsG: 45, fatG: 14),
+    _MealSeed(dayOfWeek: 7, mealType: 'dinner', name: 'Crema de calabaza', calories: 240, proteinG: 10, carbsG: 28, fatG: 10),
   ];
 
   for (final meal in meals) {
