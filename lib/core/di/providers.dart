@@ -1,9 +1,11 @@
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get_it/get_it.dart';
 
+import '../config/app_config.dart';
 import '../database/app_database.dart';
 import '../database/daos/hydration_dao.dart';
 import '../database/daos/meal_dao.dart';
@@ -11,15 +13,15 @@ import '../database/daos/medication_dao.dart';
 import '../database/daos/mood_dao.dart';
 import '../database/daos/sync_queue_dao.dart';
 import '../database/daos/user_dao.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
+import '../network/api_client.dart';
 import '../network/network_info.dart';
 import '../notifications/notification_service.dart';
 import '../sync/sync_manager.dart';
 
 // ── Features ──────────────────────────────────────────────────────────────────
 import '../../features/auth/data/datasources/auth_local_datasource.dart';
+import '../../features/auth/data/datasources/auth_remote_datasource.dart';
 import '../../features/auth/data/repositories/auth_repository_impl.dart';
 import '../../features/auth/domain/repositories/auth_repository.dart';
 import '../../features/auth/domain/usecases/login_usecase.dart';
@@ -67,8 +69,7 @@ import '../../features/progress/data/repositories/progress_repository_impl.dart'
 import '../../features/progress/domain/repositories/progress_repository.dart';
 import '../../features/progress/domain/usecases/get_weekly_progress_usecase.dart';
 
-/// Instancia global de GetIt — se accede con sl ´Tipo´() desde cualquier parte.
-/// "sl" = service locator
+/// Instancia global de GetIt — se accede con `sl<Tipo>()` desde cualquier parte.
 final sl = GetIt.instance;
 
 /// Registra todas las dependencias de la app.
@@ -86,17 +87,16 @@ Future<void> initDependencies() async {
 
 // ── CORE ──────────────────────────────────────────────────────────────────────
 Future<void> _initCore() async {
-  // Firebase — singletons del SDK
-  sl.registerLazySingleton(() => FirebaseAuth.instance);
-  sl.registerLazySingleton(() => FirebaseFirestore.instance);
+  // Firebase — singletons del SDK (siempre registrados, usados solo si AppConfig activa)
+  sl.registerLazySingleton<FirebaseAuth>(() => FirebaseAuth.instance);
+  sl.registerLazySingleton<FirebaseFirestore>(() => FirebaseFirestore.instance);
+  sl.registerLazySingleton<FirebaseMessaging>(() => FirebaseMessaging.instance);
 
   // Connectivity
   sl.registerLazySingleton(() => Connectivity());
 
   // NetworkInfo
-  sl.registerLazySingleton<NetworkInfo>(
-    () => NetworkInfoImpl(sl()),
-  );
+  sl.registerLazySingleton<NetworkInfo>(() => NetworkInfoImpl(sl()));
 
   // Base de datos Drift
   sl.registerLazySingleton(() => AppDatabase());
@@ -109,49 +109,52 @@ Future<void> _initCore() async {
   sl.registerLazySingleton(() => MedicationDao(sl<AppDatabase>()));
   sl.registerLazySingleton(() => SyncQueueDao(sl<AppDatabase>()));
 
-  // ApiClient — Dio configurado con interceptores
-  // sl.registerLazySingleton(
-  //   () => ApiClient(baseUrl: 'https://api.nutrisync.com/v1'),
-  // );
+  // ApiClient — Dio configurado para backend propio
+  sl.registerLazySingleton(() => ApiClient(baseUrl: AppConfig.apiBaseUrl));
 
-  // FirebaseMessaging y FlutterLocalNotificationsPlugin — nativos del SDK
-  sl.registerLazySingleton(() => FirebaseMessaging.instance);
+  // FlutterLocalNotificationsPlugin — siempre necesario
   sl.registerLazySingleton(() => FlutterLocalNotificationsPlugin());
 
-  // NotificationService
+  // NotificationService — usa FCM solo si el feature flag está activo
   sl.registerLazySingleton<NotificationService>(
     () => NotificationService(
       messaging: sl(),
       localNotifications: sl(),
+      useFcm: AppConfig.useFirebase,
     ),
   );
 
-  // SyncManager
+  // SyncManager — usa Firestore solo si el feature flag está activo
   sl.registerLazySingleton<SyncManager>(
     () => SyncManager(
       syncQueueDao: sl(),
       firestore: sl(),
       connectivity: sl(),
+      useFirestore: AppConfig.useFirebase,
     ),
   );
 }
 
 // ── AUTH ──────────────────────────────────────────────────────────────────────
 Future<void> _initAuth() async {
-  // Datasources
   sl.registerLazySingleton<AuthLocalDatasource>(
     () => AuthLocalDatasourceImpl(),
   );
 
-  // Repository
+  sl.registerLazySingleton<AuthRemoteDatasource>(
+    () => AuthRemoteDatasource(client: sl()),
+  );
+
   sl.registerLazySingleton<AuthRepository>(
     () => AuthRepositoryImpl(
       localDatasource: sl(),
       userDao: sl(),
+      firebaseAuth: sl(),
+      remoteDatasource: sl(),
+      useFirebase: AppConfig.useFirebase,
     ),
   );
 
-  // Use cases
   sl.registerLazySingleton(() => LoginUseCase(sl()));
   sl.registerLazySingleton(() => LogoutUseCase(sl()));
   sl.registerLazySingleton(() => RegisterUseCase(sl()));
@@ -164,9 +167,7 @@ Future<void> _initHydration() async {
     () => HydrationLocalDatasourceImpl(hydrationDao: sl()),
   );
   sl.registerLazySingleton<HydrationRepository>(
-    () => HydrationRepositoryImpl(
-      localDatasource: sl(),
-    ),
+    () => HydrationRepositoryImpl(localDatasource: sl()),
   );
   sl.registerLazySingleton(() => LogWaterUseCase(sl()));
   sl.registerLazySingleton(() => GetDailyHydrationUseCase(sl()));
@@ -211,9 +212,7 @@ Future<void> _initMedication() async {
     () => MedicationLocalDatasourceImpl(medicationDao: sl()),
   );
   sl.registerLazySingleton<MedicationRepository>(
-    () => MedicationRepositoryImpl(
-      localDatasource: sl(),
-    ),
+    () => MedicationRepositoryImpl(localDatasource: sl()),
   );
   sl.registerLazySingleton(() => LogMedicationUseCase(sl()));
   sl.registerLazySingleton(() => LogMedicationTakenUseCase(sl()));
@@ -227,9 +226,7 @@ Future<void> _initProfile() async {
     () => ProfileLocalDatasourceImpl(userDao: sl()),
   );
   sl.registerLazySingleton<ProfileRepository>(
-    () => ProfileRepositoryImpl(
-      localDatasource: sl(),
-    ),
+    () => ProfileRepositoryImpl(localDatasource: sl()),
   );
   sl.registerLazySingleton(() => GetProfileUseCase(sl()));
   sl.registerLazySingleton(() => UpdateProfileUseCase(sl()));

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
+import 'core/config/app_config.dart';
 import 'core/di/providers.dart';
 import 'core/database/app_database.dart';
 import 'core/database/seed_data.dart';
@@ -21,12 +22,15 @@ Future<void> bootstrap() async {
 
   await initializeDateFormatting('es', null);
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  // ─── Firebase (solo si el feature flag está activo) ───────────
+  if (AppConfig.useFirebase) {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
 
-  // Registra el handler de background ANTES de cualquier otra cosa de FCM
-  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    // Registra el handler de background ANTES de cualquier otra cosa de FCM
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  }
 
   await initDependencies();
 

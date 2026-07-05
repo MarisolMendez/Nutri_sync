@@ -19,23 +19,28 @@ import '../database/daos/sync_queue_dao.dart';
 /// 6. Marca cada registro como isSynced = true al confirmar con Firestore
 class SyncManager {
   final SyncQueueDao _syncQueueDao;
-  final FirebaseFirestore _firestore;
+  final FirebaseFirestore? _firestore;
   final Connectivity _connectivity;
+  final bool _useFirestore;
 
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
   bool _isSyncing = false;
 
   SyncManager({
     required SyncQueueDao syncQueueDao,
-    required FirebaseFirestore firestore,
+    required FirebaseFirestore? firestore,
     required Connectivity connectivity,
+    bool useFirestore = true,
   })  : _syncQueueDao = syncQueueDao,
         _firestore = firestore,
-        _connectivity = connectivity;
+        _connectivity = connectivity,
+        _useFirestore = useFirestore;
 
   /// Inicia el listener de conectividad.
   /// Llamar esto en bootstrap.dart una sola vez al arrancar la app.
   void init() {
+    if (!_useFirestore) return; // no hay backend remoto
+
     _connectivitySubscription = _connectivity.onConnectivityChanged.listen(
       (results) {
         final hasInternet = results.any(
@@ -50,17 +55,14 @@ class SyncManager {
   }
 
   /// Encola una operación para sincronizar cuando haya internet.
-  ///
-  /// [entity]    — nombre de la colección en Firestore: 'hydration', 'meals', etc.
-  /// [operation] — 'create' | 'update' | 'delete'
-  /// [localId]   — ID local del registro en Drift
-  /// [payload]   — datos a sincronizar como Map
   Future<void> enqueue({
     required String entity,
     required String operation,
     required String localId,
     required Map<String, dynamic> payload,
   }) async {
+    if (!_useFirestore) return; // sin backend remoto, no encolamos
+
     await _syncQueueDao.enqueue(
       SyncQueueTableCompanion.insert(
         entity: entity,
@@ -72,11 +74,8 @@ class SyncManager {
   }
 
   /// Procesa toda la cola pendiente.
-  /// Se llama automáticamente cuando vuelve internet,
-  /// pero también se puede llamar manualmente (ej. pull-to-refresh).
   Future<void> processPendingQueue() async {
-    // Evita procesar en paralelo si ya está corriendo
-    if (_isSyncing) return;
+    if (!_useFirestore || _isSyncing) return;
     _isSyncing = true;
 
     try {
@@ -88,7 +87,6 @@ class SyncManager {
           await _syncQueueDao.dequeue(operation.id);
         } catch (e) {
           await _syncQueueDao.incrementRetry(operation.id);
-          // Si falló 3 veces, lo descartamos para no bloquear la cola
           await _syncQueueDao.clearFailedOperations(maxRetries: 3);
         }
       }
@@ -99,6 +97,8 @@ class SyncManager {
 
   /// Ejecuta una operación individual contra Firestore.
   Future<void> _processOperation(SyncQueueTableData op) async {
+    if (_firestore == null) return;
+
     final payload = jsonDecode(op.payload) as Map<String, dynamic>;
     final collection = _firestore.collection(op.entity);
 

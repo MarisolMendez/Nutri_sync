@@ -13,6 +13,7 @@ import 'package:timezone/data/latest.dart' as tz_data;
 class NotificationService {
   final FirebaseMessaging _messaging;
   final FlutterLocalNotificationsPlugin _localNotifications;
+  final bool _useFcm;
 
   static const _channelMedication = AndroidNotificationChannel(
     'medication_channel',
@@ -38,8 +39,10 @@ class NotificationService {
   NotificationService({
     required FirebaseMessaging messaging,
     required FlutterLocalNotificationsPlugin localNotifications,
+    bool useFcm = true,
   })  : _messaging = messaging,
-        _localNotifications = localNotifications;
+        _localNotifications = localNotifications,
+        _useFcm = useFcm;
 
   /// Envía una notificación de prueba inmediata para verificar que funciona
   Future<void> sendTestNotification() async {
@@ -91,20 +94,23 @@ class NotificationService {
     // ── Permiso POST_NOTIFICATIONS (Android 13+) ──────────────────
     await androidPlugin?.requestNotificationsPermission();
 
-    // ── Permisos FCM ───────────────────────────────────────────────
-    await _messaging.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
+    // ── FCM (solo si está habilitado) ───────────────────────────────
+    if (_useFcm) {
+      await _messaging.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
 
-    // ── Listener de mensajes en foreground ───────────────────────
-    FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
+      // Listener de mensajes en foreground
+      FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
+    }
   }
 
   /// Token único del dispositivo — se manda al backend para que
   /// la nutrióloga pueda enviarle push a ESTE paciente específico.
-  Future<String?> getDeviceToken() => _messaging.getToken();
+  Future<String?> getDeviceToken() =>
+      _useFcm ? _messaging.getToken() : Future.value(null);
 
   /// Cuando llega un push mientras la app está abierta,
   /// FCM no lo muestra automático en Android — hay que mostrarlo

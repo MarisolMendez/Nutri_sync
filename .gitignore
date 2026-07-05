@@ -23,6 +23,20 @@ migrate_working_dir/
 # is commented out by default.
 #.vscode/
 
+# Environment variables (sensitive credentials)
+.env
+.env.local
+.env.production
+
+# Firebase configuration files (auto-generated with secrets)
+firebase.json
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+macos/Runner/GoogleService-Info.plist
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+lib/firebase_options.dart
+
 # Flutter/Dart/Pub related
 **/doc/api/
 **/ios/Flutter/.last_build_id
