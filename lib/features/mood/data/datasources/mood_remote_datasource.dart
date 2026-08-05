@@ -1,36 +1,24 @@
-import '../../../../core/error/exceptions.dart';
-import '../models/mood_model.dart';
+import '../../../../core/network/api_client.dart';
+import '../../../../core/network/api_endpoints.dart';
 
 abstract class MoodRemoteDatasource {
-  Future<void> syncMoods(String userId, List<MoodModel> moods);
-  Future<List<MoodModel>> fetchMoodHistory(String userId);
+  Future<void> logMood(String mood, String date, {String? note});
 }
 
 class MoodRemoteDatasourceImpl implements MoodRemoteDatasource {
-  const MoodRemoteDatasourceImpl();
+  final ApiClient client;
+
+  const MoodRemoteDatasourceImpl({required this.client});
 
   @override
-  Future<void> syncMoods(String userId, List<MoodModel> moods) async {
-    try {
-      // TODO: Implementar sincronización con Firestore
-      // await FirebaseFirestore.instance
-      //     .collection('users')
-      //     .doc(userId)
-      //     .collection('moods')
-      //     .doc(mood.id)
-      //     .set(mood.toJson());
-    } catch (e) {
-      throw ServerException(message: 'Error al sincronizar moods: $e');
+  Future<void> logMood(String mood, String date, {String? note}) async {
+    final data = <String, dynamic>{
+      'mood': mood,
+      'date': date,
+    };
+    if (note != null && note.isNotEmpty) {
+      data['note'] = note;
     }
-  }
-
-  @override
-  Future<List<MoodModel>> fetchMoodHistory(String userId) async {
-    try {
-      // TODO: Implementar obtención del historial desde Firestore
-      return [];
-    } catch (e) {
-      throw ServerException(message: 'Error al obtener historial de moods: $e');
-    }
+    await client.post(ApiEndpoints.mood, data: data);
   }
 }

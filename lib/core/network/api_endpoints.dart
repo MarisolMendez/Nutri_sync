@@ -1,17 +1,9 @@
-/// Centraliza todas las rutas de la API propia.
+/// Rutas de la API REST del backend propio.
 ///
-/// ⚠️ **PENDIENTE**: Tu equipo debe ajustar estas rutas
-/// para que coincidan con las de tu backend real.
-///
-/// ## Convención
-/// - `v1/` → versión de la API
-/// - Usa sustantivos en plural
-/// - Sin slash al inicio (Dio lo maneja)
-///
-/// ## Ejemplo de uso
-/// ```dart
-/// final response = await client.post(ApiEndpoints.login, data: {...});
-/// ```
+/// Convención:
+/// - Prefijo `v1/` para versionado
+/// - Sustantivos en plural
+/// - Sin slash inicial (Dio lo añade desde baseUrl)
 class ApiEndpoints {
   ApiEndpoints._();
 
@@ -19,60 +11,63 @@ class ApiEndpoints {
   //  AUTENTICACIÓN
   // ═══════════════════════════════════════════════════════════════
 
-  /// Iniciar sesión — POST
-  /// Request:  `{ email, password }`
-  /// Response: `{ token, user }`
+  /// POST — Iniciar sesión
+  /// Body: `{ email, password }`
+  /// Response: `{ success, data: { accessToken, refreshToken, user } }`
   static const String login = 'v1/auth/login';
-
-  /// Registrar usuario — POST
-  /// Request:  `{ email, password, name }`
-  /// Response: `{ token, user }`
   static const String register = 'v1/auth/register';
 
-  /// Cerrar sesión — POST
-  /// Header: Authorization: Bearer <token>
-  /// Response: `{ message: string }`
-  static const String logout = 'v1/auth/logout';
+  /// POST — Refrescar access token
+  /// Body: `{ refreshToken }`
+  /// Response: `{ success, data: { accessToken } }`
+  static const String refreshToken = 'v1/auth/refresh';
 
-  /// Obtener perfil del usuario actual — GET
-  /// Header: Authorization: Bearer <token>
-  /// Response: `{ user: UserDto }`
-  static const String profile = 'v1/auth/profile';
+  /// POST — Cerrar sesión
+  /// Body: `{ refreshToken }`
+  static const String logout = 'v1/auth/logout';
 
   // ═══════════════════════════════════════════════════════════════
   //  PLAN DE COMIDAS
   // ═══════════════════════════════════════════════════════════════
 
-  /// Obtener plan semanal — GET
-  /// Query: `?weekStart=2025-07-07`
-  /// Response: `{ meals: MealDto[] }`
   static const String weeklyPlan = 'v1/meal-plans/weekly';
-
-  /// Actualizar comida — PUT /:mealId
-  /// Body: `{ isCompleted, substituteNote, ... }`
+  static const String myPlan = 'v1/meal-plans/my-plan';
   static const String meals = 'v1/meals';
 
   // ═══════════════════════════════════════════════════════════════
-  //  HIDRATACIÓN
+  //  EXPEDIENTE CLÍNICO
   // ═══════════════════════════════════════════════════════════════
 
-  /// Registrar agua — POST
-  /// Body: `{ amountMl: number, date: string }`
-  static const String hydration = 'v1/hydration';
+  static const String clinicalRecordMetrics = 'v1/clinical-records/metrics';
 
-  /// Resumen diario — GET
-  /// Query: `?date=2025-07-07`
-  static const String dailyHydration = 'v1/hydration/daily';
+  // ═══════════════════════════════════════════════════════════════
+  //  ADHERENCIA / HIDRATACIÓN / MOOD
+  // ═══════════════════════════════════════════════════════════════
+
+  static const String hydration = 'v1/adherence/hydration';
+  static const String dailyHydration = 'v1/adherence/hydration/daily';
+  static const String mood = 'v1/adherence/mood';
+  static const String mealLogs = 'v1/adherence/meals';
+  static const String mySummary = 'v1/adherence/my-summary';
 
   // ═══════════════════════════════════════════════════════════════
   //  MEDICAMENTOS
   // ═══════════════════════════════════════════════════════════════
 
   static const String medications = 'v1/medications';
+  static const String medicationTakes = 'v1/medications'; // + /:id/takes
 
   // ═══════════════════════════════════════════════════════════════
-  //  ESTADO DE ÁNIMO
+  //  PROGRESO
   // ═══════════════════════════════════════════════════════════════
 
-  static const String moods = 'v1/moods';
+  static const String progress = 'v1/progress';
+  static const String myProgressHistory = 'v1/progress/my-history';
+
+  // ═══════════════════════════════════════════════════════════════
+  //  NOTAS DE VOZ
+  // ═══════════════════════════════════════════════════════════════
+
+  static const String voiceNotes = 'v1/voice-notes';
+  static const String voiceNoteUpload = 'v1/voice-notes/upload';
 }

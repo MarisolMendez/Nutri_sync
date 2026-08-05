@@ -35,6 +35,25 @@ class DashboardLoaded extends DashboardState {
     required this.date,
   });
 
+  DashboardLoaded copyWith({
+    HydrationSummary? hydration,
+    List<MealEntity>? todayMeals,
+    List<MedicationEntity>? medications,
+    MoodEntity? todayMood,
+    Set<int>? takenMedicationIds,
+    DateTime? date,
+    bool clearTodayMood = false,
+  }) {
+    return DashboardLoaded(
+      hydration: hydration ?? this.hydration,
+      todayMeals: todayMeals ?? this.todayMeals,
+      medications: medications ?? this.medications,
+      todayMood: clearTodayMood ? null : (todayMood ?? this.todayMood),
+      takenMedicationIds: takenMedicationIds ?? this.takenMedicationIds,
+      date: date ?? this.date,
+    );
+  }
+
   @override
   List<Object?> get props => [
         hydration,

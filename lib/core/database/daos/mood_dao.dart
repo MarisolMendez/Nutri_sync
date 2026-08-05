@@ -9,16 +9,19 @@ class MoodDao extends DatabaseAccessor<AppDatabase> with _$MoodDaoMixin {
   MoodDao(super.db);
 
   /// El registro de hoy — solo debe existir uno por día
-  Future<MoodTableData?> getTodayMood(String userId) {
+  Future<MoodTableData?> getTodayMood(String userId) async {
     final now = DateTime.now();
     final start = DateTime(now.year, now.month, now.day);
     final end = start.add(const Duration(days: 1));
-    return (select(moodTable)
+    final results = await (select(moodTable)
           ..where((m) =>
               m.userId.equals(userId) &
               m.loggedAt.isBiggerOrEqualValue(start) &
-              m.loggedAt.isSmallerThanValue(end)))
-        .getSingleOrNull();
+              m.loggedAt.isSmallerThanValue(end))
+          ..orderBy([(m) => OrderingTerm.desc(m.loggedAt)])
+          ..limit(1))
+        .get();
+    return results.isNotEmpty ? results.first : null;
   }
 
   /// Últimos 7 días — para el historial semanal de la pantalla de bienestar

@@ -7,6 +7,8 @@ class ProfileEntity extends Equatable {
   final String? photoUrl;
   final double? weightKg;
   final double? heightCm;
+  final DateTime? dateOfBirth;
+  final String? gender;
   final int dailyWaterGoalMl;
 
   const ProfileEntity({
@@ -16,12 +18,14 @@ class ProfileEntity extends Equatable {
     this.photoUrl,
     this.weightKg,
     this.heightCm,
+    this.dateOfBirth,
+    this.gender,
     this.dailyWaterGoalMl = 2000,
   });
 
   @override
   List<Object?> get props => [
         id, name, email, photoUrl,
-        weightKg, heightCm, dailyWaterGoalMl,
+        weightKg, heightCm, dateOfBirth, gender, dailyWaterGoalMl,
       ];
 }

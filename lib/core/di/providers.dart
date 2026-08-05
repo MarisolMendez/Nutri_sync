@@ -31,12 +31,14 @@ import '../../features/auth/domain/usecases/register_usecase.dart';
 
 // Comentados: features no completadas
 import '../../features/hydration/data/datasources/hydration_local_datasource.dart';
+import '../../features/hydration/data/datasources/hydration_remote_datasource.dart';
 import '../../features/hydration/data/repositories/hydration_repository_impl.dart';
 import '../../features/hydration/domain/repositories/hydration_repository.dart';
 import '../../features/hydration/domain/usecases/log_water_usecase.dart';
 import '../../features/hydration/domain/usecases/get_daily_hydration_usecase.dart';
 
 import '../../features/mood/data/datasources/mood_local_datasource.dart';
+import '../../features/mood/data/datasources/mood_remote_datasource.dart';
 import '../../features/mood/data/repositories/mood_repository_impl.dart';
 import '../../features/mood/domain/repositories/mood_repository.dart';
 import '../../features/mood/domain/usecases/log_mood_usecase.dart';
@@ -52,6 +54,7 @@ import '../../features/meal_plan/domain/usecases/save_substitute_note_usecase.da
 import '../../features/meal_plan/domain/usecases/sync_meal_plans_usecase.dart';
 
 import '../../features/medication/data/datasources/medication_local_datasource.dart';
+import '../../features/medication/data/datasources/medication_remote_datasource.dart';
 import '../../features/medication/data/repositories/medication_repository_impl.dart';
 import '../../features/medication/domain/repositories/medication_repository.dart';
 import '../../features/medication/domain/usecases/delete_medication_usecase.dart';
@@ -87,10 +90,12 @@ Future<void> initDependencies() async {
 
 // ── CORE ──────────────────────────────────────────────────────────────────────
 Future<void> _initCore() async {
-  // Firebase — singletons del SDK (siempre registrados, usados solo si AppConfig activa)
-  sl.registerLazySingleton<FirebaseAuth>(() => FirebaseAuth.instance);
-  sl.registerLazySingleton<FirebaseFirestore>(() => FirebaseFirestore.instance);
-  sl.registerLazySingleton<FirebaseMessaging>(() => FirebaseMessaging.instance);
+  // Firebase — solo se registran si el feature flag está activo
+  if (AppConfig.useFirebase) {
+    sl.registerLazySingleton<FirebaseAuth>(() => FirebaseAuth.instance);
+    sl.registerLazySingleton<FirebaseFirestore>(() => FirebaseFirestore.instance);
+    sl.registerLazySingleton<FirebaseMessaging>(() => FirebaseMessaging.instance);
+  }
 
   // Connectivity
   sl.registerLazySingleton(() => Connectivity());
@@ -115,24 +120,26 @@ Future<void> _initCore() async {
   // FlutterLocalNotificationsPlugin — siempre necesario
   sl.registerLazySingleton(() => FlutterLocalNotificationsPlugin());
 
-  // NotificationService — usa FCM solo si el feature flag está activo
+  // NotificationService — siempre registrado (funciona sin Firebase)
   sl.registerLazySingleton<NotificationService>(
     () => NotificationService(
-      messaging: sl(),
+      messaging: AppConfig.useFirebase ? sl<FirebaseMessaging>() : null,
       localNotifications: sl(),
       useFcm: AppConfig.useFirebase,
     ),
   );
 
-  // SyncManager — usa Firestore solo si el feature flag está activo
-  sl.registerLazySingleton<SyncManager>(
-    () => SyncManager(
-      syncQueueDao: sl(),
-      firestore: sl(),
-      connectivity: sl(),
-      useFirestore: AppConfig.useFirebase,
-    ),
-  );
+  // SyncManager — solo con Firebase
+  if (AppConfig.useFirebase) {
+    sl.registerLazySingleton<SyncManager>(
+      () => SyncManager(
+        syncQueueDao: sl(),
+        firestore: sl(),
+        connectivity: sl(),
+        useFirestore: true,
+      ),
+    );
+  }
 }
 
 // ── AUTH ──────────────────────────────────────────────────────────────────────
@@ -149,7 +156,7 @@ Future<void> _initAuth() async {
     () => AuthRepositoryImpl(
       localDatasource: sl(),
       userDao: sl(),
-      firebaseAuth: sl(),
+      firebaseAuth: AppConfig.useFirebase ? sl<FirebaseAuth>() : null,
       remoteDatasource: sl(),
       useFirebase: AppConfig.useFirebase,
     ),
@@ -166,8 +173,14 @@ Future<void> _initHydration() async {
   sl.registerLazySingleton<HydrationLocalDatasource>(
     () => HydrationLocalDatasourceImpl(hydrationDao: sl()),
   );
+  sl.registerLazySingleton<HydrationRemoteDatasource>(
+    () => HydrationRemoteDatasourceImpl(client: sl()),
+  );
   sl.registerLazySingleton<HydrationRepository>(
-    () => HydrationRepositoryImpl(localDatasource: sl()),
+    () => HydrationRepositoryImpl(
+      localDatasource: sl(),
+      remoteDatasource: sl(),
+    ),
   );
   sl.registerLazySingleton(() => LogWaterUseCase(sl()));
   sl.registerLazySingleton(() => GetDailyHydrationUseCase(sl()));
@@ -179,7 +192,7 @@ Future<void> _initMealPlan() async {
     () => MealPlanLocalDatasourceImpl(mealDao: sl()),
   );
   sl.registerLazySingleton<MealPlanRemoteDatasource>(
-    () => const MealPlanRemoteDatasourceImpl(),
+    () => MealPlanRemoteDatasourceImpl(client: sl()),
   );
   sl.registerLazySingleton<MealPlanRepository>(
     () => MealPlanRepositoryImpl(
@@ -199,8 +212,14 @@ Future<void> _initMood() async {
   sl.registerLazySingleton<MoodLocalDatasource>(
     () => MoodLocalDatasourceImpl(moodDao: sl()),
   );
+  sl.registerLazySingleton<MoodRemoteDatasource>(
+    () => MoodRemoteDatasourceImpl(client: sl()),
+  );
   sl.registerLazySingleton<MoodRepository>(
-    () => MoodRepositoryImpl(localDatasource: sl()),
+    () => MoodRepositoryImpl(
+      localDatasource: sl(),
+      remoteDatasource: sl(),
+    ),
   );
   sl.registerLazySingleton(() => LogMoodUseCase(sl()));
   sl.registerLazySingleton(() => GetMoodHistoryUseCase(sl()));
@@ -211,8 +230,14 @@ Future<void> _initMedication() async {
   sl.registerLazySingleton<MedicationLocalDatasource>(
     () => MedicationLocalDatasourceImpl(medicationDao: sl()),
   );
+  sl.registerLazySingleton<MedicationRemoteDatasource>(
+    () => MedicationRemoteDatasourceImpl(client: sl()),
+  );
   sl.registerLazySingleton<MedicationRepository>(
-    () => MedicationRepositoryImpl(localDatasource: sl()),
+    () => MedicationRepositoryImpl(
+      localDatasource: sl(),
+      remoteDatasource: sl(),
+    ),
   );
   sl.registerLazySingleton(() => LogMedicationUseCase(sl()));
   sl.registerLazySingleton(() => LogMedicationTakenUseCase(sl()));
@@ -236,10 +261,7 @@ Future<void> _initProfile() async {
 Future<void> _initProgress() async {
   sl.registerLazySingleton<ProgressRepository>(
     () => ProgressRepositoryImpl(
-      mealDao: sl(),
-      hydrationDao: sl(),
-      moodDao: sl(),
-      medicationDao: sl(),
+      apiClient: sl(),
     ),
   );
   sl.registerLazySingleton(() => GetWeeklyProgressUseCase(sl()));

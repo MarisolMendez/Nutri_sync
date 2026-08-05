@@ -4,11 +4,16 @@ import '../../../../core/error/failures.dart';
 import '../../domain/entities/hydration_entity.dart';
 import '../../domain/repositories/hydration_repository.dart';
 import '../datasources/hydration_local_datasource.dart';
+import '../datasources/hydration_remote_datasource.dart';
 
 class HydrationRepositoryImpl implements HydrationRepository {
   final HydrationLocalDatasource localDatasource;
+  final HydrationRemoteDatasource remoteDatasource;
 
-  const HydrationRepositoryImpl({required this.localDatasource});
+  const HydrationRepositoryImpl({
+    required this.localDatasource,
+    required this.remoteDatasource,
+  });
 
   @override
   Future<Either<Failure, HydrationSummary>> getDailySummary({
@@ -17,9 +22,21 @@ class HydrationRepositoryImpl implements HydrationRepository {
   }) async {
     try {
       final logs = await localDatasource.getDayLogs(userId, date);
-      final totalMl = await localDatasource.getDayTotalMl(userId, date);
+      var localTotalMl = await localDatasource.getDayTotalMl(userId, date);
       final streak = await getStreakDays(userId: userId);
       final streakDays = streak.fold((_) => 0, (s) => s);
+
+      // Obtener total remoto y combinarlo con local
+      var remoteTotalMl = 0;
+      try {
+        final todayStr = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+        remoteTotalMl = await remoteDatasource.getDailyTotalMl(todayStr);
+      } catch (_) {
+        // Si falla la red, usar solo datos locales
+      }
+
+      // El total real es el mayor entre local y remoto
+      final totalMl = localTotalMl > remoteTotalMl ? localTotalMl : remoteTotalMl;
 
       // Meta por defecto 2000ml — se actualizará desde el perfil del usuario
       const goalMl = 2000;
@@ -50,12 +67,21 @@ class HydrationRepositoryImpl implements HydrationRepository {
   }) async {
     try {
       await localDatasource.insertLog(userId, amountMl);
-      return const Right(null);
     } on DatabaseException catch (e) {
       return Left(DatabaseFailure(e.message));
     } catch (e) {
       return Left(UnexpectedFailure(e.toString()));
     }
+
+    // Sincronizar con backend
+    try {
+      final today = DateTime.now().toIso8601String().split('T').first;
+      await remoteDatasource.logWater(today, amountMl);
+    } catch (_) {
+      // Error silencioso: los datos ya están guardados localmente
+    }
+
+    return const Right(null);
   }
 
   @override

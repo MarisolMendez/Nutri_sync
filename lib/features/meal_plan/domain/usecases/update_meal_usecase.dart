@@ -20,7 +20,7 @@ class UpdateMealUseCase implements UseCase<void, UpdateMealParams> {
 }
 
 class UpdateMealParams extends Equatable {
-  final int mealId;
+  final String mealId;
   final bool consumed;
   final String? substituteNote;
   final String? voiceNotePath;

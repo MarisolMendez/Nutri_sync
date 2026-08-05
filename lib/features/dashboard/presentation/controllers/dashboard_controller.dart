@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/di/providers.dart';
+import '../../../auth/presentation/controllers/auth_controller.dart';
+import '../../../auth/presentation/controllers/auth_state.dart';
 import '../../../hydration/domain/entities/hydration_entity.dart';
 import '../../../hydration/domain/usecases/get_daily_hydration_usecase.dart';
 import '../../../meal_plan/domain/entities/meal_plan_entities.dart';
@@ -30,7 +32,10 @@ class DashboardController extends Notifier<DashboardState> {
   late final DeleteMedicationUseCase _deleteMedication;
   late final MoodRepository _moodRepository;
 
-  static const _tempUserId = 'user_1';
+  String get _userId {
+    final authState = ref.read(authControllerProvider);
+    return authState is AuthAuthenticated ? authState.user.id : 'anon';
+  }
 
   @override
   DashboardState build() {
@@ -53,11 +58,13 @@ class DashboardController extends Notifier<DashboardState> {
       final monday = now.subtract(Duration(days: now.weekday - 1));
       final weekStart = DateTime(monday.year, monday.month, monday.day);
 
+      final userId = _userId;
+
       // Carga todo en paralelo
       final results = await Future.wait([
-        _getDailyHydration(HydrationParams(userId: _tempUserId, date: now)),
-        _getWeeklyPlan(WeeklyPlanParams(userId: _tempUserId, weekStart: weekStart)),
-        _getMedicationSchedule(const MedicationParams(userId: _tempUserId)),
+        _getDailyHydration(HydrationParams(userId: userId, date: now)),
+        _getWeeklyPlan(WeeklyPlanParams(userId: userId, weekStart: weekStart)),
+        _getMedicationSchedule(MedicationParams(userId: userId)),
       ]);
 
       final hydrationResult = results[0];
@@ -92,7 +99,7 @@ class DashboardController extends Notifier<DashboardState> {
 
       // Obtener el estado de ánimo de hoy
       final todayMoodResult = await _moodRepository.getTodayMood(
-        userId: _tempUserId,
+        userId: userId,
       );
       final todayMood = todayMoodResult.getOrElse(() => null);
 
@@ -114,7 +121,19 @@ class DashboardController extends Notifier<DashboardState> {
       mealId: meal.id,
       consumed: !meal.isConsumed,
     ));
-    await load();
+    _markMealLocally(meal.id, consumed: !meal.isConsumed);
+  }
+
+  void _markMealLocally(String mealId, {bool consumed = true}) {
+    if (state is! DashboardLoaded) return;
+    final loaded = state as DashboardLoaded;
+    final updatedMeals = loaded.todayMeals.map((m) {
+      if (m.id == mealId) {
+        return m.copyWith(isConsumed: consumed);
+      }
+      return m;
+    }).toList();
+    state = loaded.copyWith(todayMeals: updatedMeals);
   }
 
   Future<void> toggleMedicationTaken(int medicationId) async {
@@ -125,7 +144,25 @@ class DashboardController extends Notifier<DashboardState> {
   }
 
   Future<void> saveMood(MoodValue mood) async {
-    await _logMood(LogMoodParams(userId: _tempUserId, mood: mood));
+    if (state is DashboardLoaded && (state as DashboardLoaded).todayMood != null) {
+      return;
+    }
+
+    // Actualización optimista: bloquea la UI inmediatamente sin esperar
+    // a que terminen las operaciones asíncronas (logMood + load)
+    if (state is DashboardLoaded) {
+      final loaded = state as DashboardLoaded;
+      state = loaded.copyWith(
+        todayMood: MoodEntity(
+          id: -1,
+          userId: _userId,
+          mood: mood,
+          loggedAt: DateTime.now(),
+        ),
+      );
+    }
+
+    await _logMood(LogMoodParams(userId: _userId, mood: mood));
     await load();
   }
 

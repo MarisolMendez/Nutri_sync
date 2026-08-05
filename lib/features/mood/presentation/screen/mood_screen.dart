@@ -52,28 +52,6 @@ class _MoodScreenState extends ConsumerState<MoodScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        actions: [
-          Stack(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.notifications_outlined),
-                onPressed: () {},
-              ),
-              Positioned(
-                right: 10,
-                top: 10,
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    color: NutriColors.error,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
       ),
       backgroundColor: NutriColors.background,
       body: switch (state) {
@@ -176,47 +154,79 @@ class _MoodContent extends StatelessWidget {
                     return _MoodOption(
                       mood: mood,
                       isSelected: isSelected,
+                      isDisabled: state.todayMood != null,
                       onTap: () => onMoodSelected(mood),
                     );
                   }).toList(),
                 ),
                 const SizedBox(height: 20),
 
-                // Campo de nota
-                TextField(
-                  controller: noteController,
-                  onChanged: onNoteChanged,
-                  maxLines: 3,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                  decoration: InputDecoration(
-                    hintText: '¿Algo que quieras compartir?',
-                    hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: NutriColors.textSecondary,
+                // Mensaje cuando ya registró hoy
+                if (state.todayMood != null)
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE8F5E9),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFFC8E6C9)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.check_circle, size: 18, color: Color(0xFF4CAF50)),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Ya has registrado tu estado de ánimo hoy',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: const Color(0xFF2E7D32),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
                         ),
-                    filled: true,
-                    fillColor: const Color(0xFFEDF7F3),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: NutriColors.border),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: NutriColors.border),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                          color: NutriColors.primary, width: 1.5),
+                      ],
                     ),
                   ),
-                ),
-                const SizedBox(height: 20),
 
-                // Botón guardar
-                ElevatedButton(
-                  onPressed: state.selectedMood != null ? onSave : null,
-                  child: const Text('Guardar registro de hoy'),
-                ),
+                // Campo de nota y botón guardar (solo si no ha registrado)
+                if (state.todayMood == null) ...[
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: noteController,
+                    onChanged: onNoteChanged,
+                    maxLines: 3,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                    decoration: InputDecoration(
+                      hintText: '¿Algo que quieras compartir?',
+                      hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: NutriColors.textSecondary,
+                          ),
+                      filled: true,
+                      fillColor: const Color(0xFFEDF7F3),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: NutriColors.border),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: NutriColors.border),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                            color: NutriColors.primary, width: 1.5),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Botón guardar
+                  ElevatedButton.icon(
+                    onPressed: state.selectedMood != null ? onSave : null,
+                    icon: const Icon(Icons.check_circle_outline, size: 18),
+                    label: const Text('Guardar'),
+                  ),
+                ],
               ],
             ),
           ),
@@ -243,74 +253,6 @@ class _MoodContent extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-
-          // ── Mensaje de la nutrióloga ───────────────────────────────
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFFEDF7F3),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: NutriColors.border),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.chat_outlined,
-                        size: 16, color: NutriColors.primaryDark),
-                    const SizedBox(width: 8),
-                    Text(
-                      'MENSAJE DE TU NUTRIÓLOGA',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: NutriColors.primaryDark,
-                            letterSpacing: 0.5,
-                          ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  '"Recuerda que el estrés afecta directamente tu metabolismo. Respira profundo y toma tu agua. ¡Vas muy bien! 🌱"',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: NutriColors.textPrimary,
-                        height: 1.5,
-                      ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    // Avatar nutrióloga
-                    CircleAvatar(
-                      radius: 18,
-                      backgroundColor: NutriColors.border,
-                      child: const Icon(Icons.person,
-                          color: NutriColors.textSecondary, size: 20),
-                    ),
-                    const SizedBox(width: 10),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Dra. Laura Reyes',
-                          style:
-                              Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                        ),
-                        Text(
-                          'Hace 2 horas',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
         ],
       ),
     );
@@ -322,18 +264,20 @@ class _MoodContent extends StatelessWidget {
 class _MoodOption extends StatelessWidget {
   final MoodValue mood;
   final bool isSelected;
+  final bool isDisabled;
   final VoidCallback onTap;
 
   const _MoodOption({
     required this.mood,
     required this.isSelected,
+    this.isDisabled = false,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: isDisabled ? null : onTap,
       child: Column(
         children: [
           Container(
@@ -349,9 +293,12 @@ class _MoodOption extends StatelessWidget {
                   : Colors.transparent,
             ),
             child: Center(
-              child: Text(
-                mood.emoji,
-                style: const TextStyle(fontSize: 28),
+              child: Opacity(
+                opacity: isDisabled ? 0.5 : 1.0,
+                child: Text(
+                  mood.emoji,
+                  style: const TextStyle(fontSize: 28),
+                ),
               ),
             ),
           ),

@@ -10,17 +10,16 @@ class SaveSubstituteNoteUseCase implements UseCase<void, SaveSubstituteNoteParam
 
   @override
   Future<Either<Failure, void>> call(SaveSubstituteNoteParams params) {
-    return repository.updateMealConsumed(
+    return repository.saveSubstituteNote(
       mealId: params.mealId,
-      consumed: params.consumed,
-      substituteNote: params.note,
+      note: params.note,
       voiceNotePath: params.voiceNotePath,
     );
   }
 }
 
 class SaveSubstituteNoteParams extends Equatable {
-  final int mealId;
+  final String mealId;
   final bool consumed;
   final String? note;
   final String? voiceNotePath;

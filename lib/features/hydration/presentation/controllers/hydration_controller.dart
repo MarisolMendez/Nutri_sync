@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/di/providers.dart';
 import '../../../../core/notifications/notification_service.dart';
+import '../../../auth/presentation/controllers/auth_controller.dart';
+import '../../../auth/presentation/controllers/auth_state.dart';
 import '../../domain/usecases/get_daily_hydration_usecase.dart';
 import '../../domain/usecases/log_water_usecase.dart';
 import 'hydration_state.dart';
@@ -15,8 +17,10 @@ class HydrationController extends Notifier<HydrationState> {
   late final LogWaterUseCase _logWater;
   late final NotificationService _notificationService;
 
-  // Usuario temporal hasta conectar auth
-  static const _tempUserId = 'user_1';
+  String get _userId {
+    final authState = ref.read(authControllerProvider);
+    return authState is AuthAuthenticated ? authState.user.id : 'anon';
+  }
 
   @override
   HydrationState build() {
@@ -30,7 +34,7 @@ class HydrationController extends Notifier<HydrationState> {
     state = const HydrationLoading();
 
     final result = await _getDailyHydration(
-      HydrationParams(userId: _tempUserId, date: DateTime.now()),
+      HydrationParams(userId: _userId, date: DateTime.now()),
     );
 
     result.fold(
@@ -40,8 +44,16 @@ class HydrationController extends Notifier<HydrationState> {
   }
 
   Future<void> addWater(int amountMl) async {
+    // Si ya alcanzó la meta, no permitir más registros
+    if (state is HydrationLoaded) {
+      final current = state as HydrationLoaded;
+      if (current.summary.totalMl >= current.summary.goalMl) {
+        return;
+      }
+    }
+
     final result = await _logWater(
-      LogWaterParams(userId: _tempUserId, amountMl: amountMl),
+      LogWaterParams(userId: _userId, amountMl: amountMl),
     );
 
     result.fold(

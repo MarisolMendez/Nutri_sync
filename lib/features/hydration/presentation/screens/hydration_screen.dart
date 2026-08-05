@@ -74,6 +74,8 @@ class _HydrationContent extends StatelessWidget {
     required this.onRegister,
   });
 
+  bool get _goalReached => (summary.totalMl as int) >= (summary.goalMl as int);
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -81,6 +83,42 @@ class _HydrationContent extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // ── Banner de meta alcanzada ──────────────────────────────
+          if (_goalReached)
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: NutriColors.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: NutriColors.primary.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.check_circle, color: NutriColors.primary, size: 24),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '¡Meta alcanzada!',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                color: NutriColors.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
+                        Text(
+                          'Ya cumpliste con tu objetivo de hidratación diaria.',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: NutriColors.textSecondary,
+                              ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
           // ── Racha ──────────────────────────────────────────────────
           if (summary.streakDays > 0)
             Container(
@@ -209,98 +247,100 @@ class _HydrationContent extends StatelessWidget {
           ),
           const SizedBox(height: 20),
 
-          // ── Añadir rápido ──────────────────────────────────────────
-          Text(
-            'Añadir rápido',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              _QuickAddButton(
-                icon: Icons.local_drink_outlined,
-                amount: '+250',
-                label: 'VASO',
-                isSelected: customAmountMl == 250,
-                onTap: () => onQuickAdd(250),
-              ),
-              const SizedBox(width: 10),
-              _QuickAddButton(
-                icon: Icons.water_drop_outlined,
-                amount: '+500',
-                label: 'BOTELLA P',
-                isSelected: customAmountMl == 500,
-                onTap: () => onQuickAdd(500),
-              ),
-              const SizedBox(width: 10),
-              _QuickAddButton(
-                icon: Icons.wine_bar_outlined,
-                amount: '+1000',
-                label: 'BOTELLA G',
-                isSelected: customAmountMl == 1000,
-                onTap: () => onQuickAdd(1000),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-
-          // ── Cantidad personalizada ─────────────────────────────────
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Cantidad personalizada',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              Text(
-                '$customAmountMl ml',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              activeTrackColor: NutriColors.primary,
-              inactiveTrackColor: NutriColors.border,
-              thumbColor: NutriColors.primary,
-              overlayColor: NutriColors.primary.withValues(alpha: 0.1),
-              trackHeight: 4,
+          if (!_goalReached) ...[
+            // ── Añadir rápido ────────────────────────────────────────
+            Text(
+              'Añadir rápido',
+              style: Theme.of(context).textTheme.titleMedium,
             ),
-            child: Slider(
-              min: 50,
-              max: 1500,
-              divisions: 29,
-              value: customAmountMl.toDouble(),
-              onChanged: (v) => onCustomAmountChanged(v.toInt()),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                _QuickAddButton(
+                  icon: Icons.local_drink_outlined,
+                  amount: '+250',
+                  label: 'VASO',
+                  isSelected: customAmountMl == 250,
+                  onTap: () => onQuickAdd(250),
+                ),
+                const SizedBox(width: 10),
+                _QuickAddButton(
+                  icon: Icons.water_drop_outlined,
+                  amount: '+500',
+                  label: 'BOTELLA P',
+                  isSelected: customAmountMl == 500,
+                  onTap: () => onQuickAdd(500),
+                ),
+                const SizedBox(width: 10),
+                _QuickAddButton(
+                  icon: Icons.wine_bar_outlined,
+                  amount: '+1000',
+                  label: 'BOTELLA G',
+                  isSelected: customAmountMl == 1000,
+                  onTap: () => onQuickAdd(1000),
+                ),
+              ],
             ),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('50 ml',
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.copyWith(color: NutriColors.textSecondary)),
-              Text('1500 ml',
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.copyWith(color: NutriColors.textSecondary)),
-            ],
-          ),
-          const SizedBox(height: 24),
+            const SizedBox(height: 20),
 
-          // ── Botón Registrar ────────────────────────────────────────
-          ElevatedButton.icon(
-            onPressed: onRegister,
-            icon: const Icon(Icons.add_circle_outline, size: 20),
-            label: const Text('Registrar'),
-          ),
-          const SizedBox(height: 16),
+            // ── Cantidad personalizada ───────────────────────────────
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Cantidad personalizada',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                Text(
+                  '$customAmountMl ml',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            SliderTheme(
+              data: SliderTheme.of(context).copyWith(
+                activeTrackColor: NutriColors.primary,
+                inactiveTrackColor: NutriColors.border,
+                thumbColor: NutriColors.primary,
+                overlayColor: NutriColors.primary.withValues(alpha: 0.1),
+                trackHeight: 4,
+              ),
+              child: Slider(
+                min: 50,
+                max: 1500,
+                divisions: 29,
+                value: customAmountMl.toDouble(),
+                onChanged: (v) => onCustomAmountChanged(v.toInt()),
+              ),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('50 ml',
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(color: NutriColors.textSecondary)),
+                Text('1500 ml',
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(color: NutriColors.textSecondary)),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            // ── Botón Registrar ──────────────────────────────────────
+            ElevatedButton.icon(
+              onPressed: onRegister,
+              icon: const Icon(Icons.add_circle_outline, size: 20),
+              label: const Text('Registrar'),
+            ),
+            const SizedBox(height: 16),
+          ],
         ],
       ),
     );

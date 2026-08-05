@@ -18,10 +18,12 @@ class MealPlanLoading extends MealPlanState {
 class MealPlanLoaded extends MealPlanState {
   final WeeklyPlanEntity plan;
   final int selectedDay; // 1=Lun ... 7=Dom
+  final String? errorMessage;
 
   const MealPlanLoaded({
     required this.plan,
     required this.selectedDay,
+    this.errorMessage,
   });
 
   List<MealEntity> get mealsForSelectedDay =>
@@ -30,15 +32,18 @@ class MealPlanLoaded extends MealPlanState {
   MealPlanLoaded copyWith({
     WeeklyPlanEntity? plan,
     int? selectedDay,
+    String? errorMessage,
+    bool clearError = false,
   }) {
     return MealPlanLoaded(
       plan: plan ?? this.plan,
       selectedDay: selectedDay ?? this.selectedDay,
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     );
   }
 
   @override
-  List<Object?> get props => [plan, selectedDay];
+  List<Object?> get props => [plan, selectedDay, errorMessage];
 }
 
 class MealPlanEmpty extends MealPlanState {

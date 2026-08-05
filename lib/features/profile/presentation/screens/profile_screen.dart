@@ -19,6 +19,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   final _nameController = TextEditingController();
   final _weightController = TextEditingController();
   final _heightController = TextEditingController();
+  DateTime? _dateOfBirth;
+  String? _gender;
 
   @override
   void initState() {
@@ -40,6 +42,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     _nameController.text = profile.name;
     _weightController.text = profile.weightKg?.toString() ?? '';
     _heightController.text = profile.heightCm?.toString() ?? '';
+    _dateOfBirth = profile.dateOfBirth;
+    _gender = profile.gender;
+  }
+
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _dateOfBirth ?? DateTime(1990),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+    );
+    if (picked != null) {
+      setState(() => _dateOfBirth = picked);
+    }
   }
 
   Future<void> _confirmLogout() async {
@@ -72,7 +88,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(profileControllerProvider);
 
-    // Sincronizar controladores cuando el perfil se carga por primera vez
     ref.listen<ProfileState>(profileControllerProvider, (previous, next) {
       if (next is ProfileLoaded && previous is! ProfileLoaded) {
         _syncControllers(next.profile);
@@ -109,6 +124,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             nameController: _nameController,
             weightController: _weightController,
             heightController: _heightController,
+            dateOfBirth: _dateOfBirth,
+            gender: _gender,
+            onPickDate: _pickDate,
+            onGenderChanged: (g) => setState(() => _gender = g),
             onEditToggle: () =>
                 ref.read(profileControllerProvider.notifier).toggleEditing(),
             onSave: () {
@@ -116,6 +135,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     name: _nameController.text,
                     weightKg: double.tryParse(_weightController.text),
                     heightCm: double.tryParse(_heightController.text),
+                    dateOfBirth: _dateOfBirth,
+                    gender: _gender,
                   );
             },
             onViewProgress: () => Navigator.of(context).push(
@@ -154,6 +175,10 @@ class _ProfileContent extends StatelessWidget {
   final TextEditingController nameController;
   final TextEditingController weightController;
   final TextEditingController heightController;
+  final DateTime? dateOfBirth;
+  final String? gender;
+  final VoidCallback onPickDate;
+  final ValueChanged<String?> onGenderChanged;
   final VoidCallback onEditToggle;
   final VoidCallback onSave;
   final VoidCallback onViewProgress;
@@ -164,11 +189,20 @@ class _ProfileContent extends StatelessWidget {
     required this.nameController,
     required this.weightController,
     required this.heightController,
+    required this.dateOfBirth,
+    required this.gender,
+    required this.onPickDate,
+    required this.onGenderChanged,
     required this.onEditToggle,
     required this.onSave,
     required this.onViewProgress,
     required this.onLogout,
   });
+
+  String _formatDate(DateTime? dt) {
+    if (dt == null) return '—';
+    return '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -179,7 +213,6 @@ class _ProfileContent extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Avatar y nombre ──────────────────────────────────────
           Center(
             child: Column(
               children: [
@@ -209,7 +242,6 @@ class _ProfileContent extends StatelessWidget {
           ),
           const SizedBox(height: 24),
 
-          // ── Acceso a Mi Progreso ─────────────────────────────────
           GestureDetector(
             onTap: onViewProgress,
             child: Container(
@@ -255,7 +287,6 @@ class _ProfileContent extends StatelessWidget {
           ),
           const SizedBox(height: 12),
 
-          // ── Términos y Condiciones ────────────────────────────────
           GestureDetector(
             onTap: () => context.push('/terms'),
             child: Container(
@@ -301,7 +332,6 @@ class _ProfileContent extends StatelessWidget {
           ),
           const SizedBox(height: 20),
 
-          // ── Datos personales ─────────────────────────────────────
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -329,80 +359,64 @@ class _ProfileContent extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Nombre',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: NutriColors.textSecondary,
-                        )),
-                const SizedBox(height: 6),
-                state.isEditing
-                    ? TextFormField(controller: nameController)
-                    : Text(profile.name,
-                        style: Theme.of(context).textTheme.bodyLarge),
+                _fieldRow(context, 'Nombre', nameController, profile.name, state.isEditing),
                 const SizedBox(height: 16),
-
                 Row(
                   children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Peso (kg)',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(
-                                      color: NutriColors.textSecondary)),
-                          const SizedBox(height: 6),
-                          state.isEditing
-                              ? TextFormField(
-                                  controller: weightController,
-                                  keyboardType: TextInputType.number,
-                                )
-                              : Text(
-                                  profile.weightKg != null
-                                      ? '${profile.weightKg}'
-                                      : '—',
-                                  style:
-                                      Theme.of(context).textTheme.bodyLarge,
-                                ),
-                        ],
-                      ),
-                    ),
+                    Expanded(child: _fieldRow(context, 'Peso (kg)', weightController, profile.weightKg?.toString() ?? '—', state.isEditing, isNumber: true)),
                     const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Altura (cm)',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(
-                                      color: NutriColors.textSecondary)),
-                          const SizedBox(height: 6),
-                          state.isEditing
-                              ? TextFormField(
-                                  controller: heightController,
-                                  keyboardType: TextInputType.number,
-                                )
-                              : Text(
-                                  profile.heightCm != null
-                                      ? '${profile.heightCm}'
-                                      : '—',
-                                  style:
-                                      Theme.of(context).textTheme.bodyLarge,
-                                ),
-                        ],
-                      ),
-                    ),
+                    Expanded(child: _fieldRow(context, 'Altura (cm)', heightController, profile.heightCm?.toString() ?? '—', state.isEditing, isNumber: true)),
                   ],
                 ),
+                const SizedBox(height: 16),
+                Text('Fecha de nacimiento',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: NutriColors.textSecondary)),
+                const SizedBox(height: 6),
+                if (state.isEditing)
+                  GestureDetector(
+                    onTap: onPickDate,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: NutriColors.border),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.calendar_today, size: 16, color: NutriColors.textSecondary),
+                          const SizedBox(width: 8),
+                          Text(_formatDate(dateOfBirth), style: Theme.of(context).textTheme.bodyLarge),
+                        ],
+                      ),
+                    ),
+                  )
+                else
+                  Text(_formatDate(dateOfBirth), style: Theme.of(context).textTheme.bodyLarge),
+                const SizedBox(height: 16),
+                Text('Género',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: NutriColors.textSecondary)),
+                const SizedBox(height: 6),
+                if (state.isEditing)
+                  DropdownButtonFormField<String>(
+                    value: gender,
+                    items: const [
+                      DropdownMenuItem(value: 'male', child: Text('Masculino')),
+                      DropdownMenuItem(value: 'female', child: Text('Femenino')),
+                    ],
+                    onChanged: onGenderChanged,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    ),
+                  )
+                else
+                  Text(gender == 'male' ? 'Masculino' : gender == 'female' ? 'Femenino' : '—',
+                      style: Theme.of(context).textTheme.bodyLarge),
               ],
             ),
           ),
           const SizedBox(height: 24),
 
-          // ── Cerrar sesión ────────────────────────────────────────
           OutlinedButton.icon(
             onPressed: onLogout,
             icon: const Icon(Icons.logout, size: 18, color: NutriColors.error),
@@ -416,6 +430,19 @@ class _ProfileContent extends StatelessWidget {
           const SizedBox(height: 16),
         ],
       ),
+    );
+  }
+
+  Widget _fieldRow(BuildContext context, String label, TextEditingController controller, String displayValue, bool isEditing, {bool isNumber = false}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: NutriColors.textSecondary)),
+        const SizedBox(height: 6),
+        isEditing
+            ? TextFormField(controller: controller, keyboardType: isNumber ? TextInputType.number : null)
+            : Text(displayValue, style: Theme.of(context).textTheme.bodyLarge),
+      ],
     );
   }
 }

@@ -8,7 +8,8 @@ import '../controllers/meal_plan_state.dart';
 
 class RecipeDetailScreen extends ConsumerStatefulWidget {
   final MealEntity meal;
-  const RecipeDetailScreen({super.key, required this.meal});
+  final bool isToday;
+  const RecipeDetailScreen({super.key, required this.meal, this.isToday = false});
 
   @override
   ConsumerState<RecipeDetailScreen> createState() => _RecipeDetailScreenState();
@@ -53,6 +54,8 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
             state: state,
             ingredients: _ingredients,
             onToggleIngredient: _toggleIngredient,
+            isConsumed: widget.meal.isConsumed,
+            isToday: widget.isToday,
             onRegister: () {
               ref
                   .read(mealPlanControllerProvider.notifier)
@@ -71,12 +74,16 @@ class _RecipeContent extends StatelessWidget {
   final List<IngredientEntity> ingredients;
   final void Function(int) onToggleIngredient;
   final VoidCallback onRegister;
+  final bool isConsumed;
+  final bool isToday;
 
   const _RecipeContent({
     required this.state,
     required this.ingredients,
     required this.onToggleIngredient,
     required this.onRegister,
+    required this.isConsumed,
+    this.isToday = false,
   });
 
   @override
@@ -322,16 +329,20 @@ class _RecipeContent extends StatelessWidget {
 
                 // ── Botón registrar ───────────────────────────────────
                 ElevatedButton(
-                  onPressed: onRegister,
+                  onPressed: (isConsumed || !isToday) ? null : onRegister,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: NutriColors.success,
-                    foregroundColor: NutriColors.textOnPrimary,
+                    backgroundColor: (isConsumed || !isToday) ? NutriColors.border : NutriColors.success,
+                    foregroundColor: (isConsumed || !isToday) ? NutriColors.textPrimary : NutriColors.textOnPrimary,
                     minimumSize: const Size(double.infinity, 44),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
                   ),
-                  child: const Text('Registrar como consumido'),
+                  child: Text(
+                    isConsumed ? '✓ Este alimento ya ha sido registrado' :
+                    !isToday ? 'Solo puedes registrar comidas del día de hoy' :
+                    'Registrar como consumido',
+                  ),
                 ),
                 const SizedBox(height: 16),
               ],

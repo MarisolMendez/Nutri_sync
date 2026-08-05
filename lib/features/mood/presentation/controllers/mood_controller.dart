@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/di/providers.dart';
+import '../../../auth/presentation/controllers/auth_controller.dart';
+import '../../../auth/presentation/controllers/auth_state.dart';
 import '../../domain/entities/mood_entity.dart';
 import '../../domain/usecases/get_mood_history_usecase.dart';
 import '../../domain/usecases/log_mood_usecase.dart';
@@ -17,7 +19,10 @@ class MoodController extends Notifier<MoodState> {
   final LogMoodUseCase _logMood;
   final GetMoodHistoryUseCase _getMoodHistory;
 
-  static const _tempUserId = 'user_1';
+  String get _userId {
+    final authState = ref.read(authControllerProvider);
+    return authState is AuthAuthenticated ? authState.user.id : 'anon';
+  }
 
   MoodController({
     required LogMoodUseCase logMood,
@@ -34,7 +39,7 @@ class MoodController extends Notifier<MoodState> {
     state = const MoodLoading();
 
     final weekResult = await _getMoodHistory(
-      const MoodParams(userId: _tempUserId),
+      MoodParams(userId: _userId),
     );
 
     weekResult.fold(
@@ -70,7 +75,7 @@ class MoodController extends Notifier<MoodState> {
 
     final result = await _logMood(
       LogMoodParams(
-        userId: _tempUserId,
+        userId: _userId,
         mood: current.selectedMood!,
         note: current.note.isEmpty ? null : current.note,
       ),

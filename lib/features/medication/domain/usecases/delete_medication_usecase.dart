@@ -11,14 +11,15 @@ class DeleteMedicationUseCase
 
   @override
   Future<Either<Failure, void>> call(DeleteMedicationParams params) {
-    return repository.deleteMedication(id: params.id);
+    return repository.deleteMedication(id: params.id, remoteId: params.remoteId);
   }
 }
 
 class DeleteMedicationParams extends Equatable {
   final int id;
-  const DeleteMedicationParams({required this.id});
+  final String? remoteId;
+  const DeleteMedicationParams({required this.id, this.remoteId});
 
   @override
-  List<Object> get props => [id];
+  List<Object?> get props => [id, remoteId];
 }

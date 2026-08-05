@@ -1,6 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/di/providers.dart';
 import '../../../../core/notifications/notification_service.dart';
+import '../../../auth/presentation/controllers/auth_controller.dart';
+import '../../../auth/presentation/controllers/auth_state.dart';
+import '../../domain/usecases/delete_medication_usecase.dart';
 import '../../domain/usecases/get_medication_schedule_usecase.dart';
 import '../../domain/usecases/log_medication_usecase.dart';
 import 'medication_state.dart';
@@ -19,14 +22,19 @@ final medicationFormProvider =
 class MedicationController extends Notifier<MedicationState> {
   late final GetMedicationScheduleUseCase _getSchedule;
   late final LogMedicationUseCase _logMedication;
+  late final DeleteMedicationUseCase _deleteMedication;
   late final NotificationService _notificationService;
 
-  static const _tempUserId = 'user_1';
+  String get _userId {
+    final authState = ref.read(authControllerProvider);
+    return authState is AuthAuthenticated ? authState.user.id : 'anon';
+  }
 
   @override
   MedicationState build() {
     _getSchedule = sl();
     _logMedication = sl();
+    _deleteMedication = sl();
     _notificationService = sl();
     return const MedicationInitial();
   }
@@ -34,7 +42,7 @@ class MedicationController extends Notifier<MedicationState> {
   Future<void> load() async {
     state = const MedicationLoading();
     final result = await _getSchedule(
-      const MedicationParams(userId: _tempUserId),
+      MedicationParams(userId: _userId),
     );
     result.fold(
       (failure) => state = MedicationError(failure.message),
@@ -45,7 +53,7 @@ class MedicationController extends Notifier<MedicationState> {
   Future<void> saveMedication(MedicationFormState form) async {
     final result = await _logMedication(
       LogMedicationParams(
-        userId: _tempUserId,
+        userId: _userId,
         name: form.name,
         dosage: form.dosage,
         reminderEnabled: form.reminderEnabled,
@@ -57,20 +65,21 @@ class MedicationController extends Notifier<MedicationState> {
     result.fold(
       (failure) => state = MedicationError(failure.message),
       (_) async {
-        // Programa un recordatorio local por cada hora configurada.
-        // El id se genera combinando el nombre y la hora para que
-        // sea estable y se pueda cancelar/reprogramar después.
         if (form.reminderEnabled) {
           for (final time in form.times) {
             final parsed = _parseTime(time);
             if (parsed == null) continue;
-            await _notificationService.scheduleMedicationReminder(
-              id: _stableId(form.name, time),
-              medicationName: form.name,
-              dosage: form.dosage,
-              hour: parsed.hour,
-              minute: parsed.minute,
-            );
+            try {
+              await _notificationService.scheduleMedicationReminder(
+                id: _stableId(form.name, time),
+                medicationName: form.name,
+                dosage: form.dosage,
+                hour: parsed.hour,
+                minute: parsed.minute,
+              );
+            } catch (_) {
+              // Si falla la notificación, no crashear la app
+            }
           }
         }
         load();
@@ -78,8 +87,19 @@ class MedicationController extends Notifier<MedicationState> {
     );
   }
 
-  /// Convierte "08:00 AM" a un DateTime de hoy con esa hora.
-  /// Retorna null si el formato no es el esperado.
+  Future<void> deleteMedicationItem(int id, String? remoteId, String name, List<String> times) async {
+    // Cancelar recordatorios asociados
+    for (final time in times) {
+      await _notificationService.cancelMedicationReminder(_stableId(name, time));
+    }
+
+    final result = await _deleteMedication(DeleteMedicationParams(id: id, remoteId: remoteId));
+    result.fold(
+      (failure) => state = MedicationError(failure.message),
+      (_) => load(),
+    );
+  }
+
   DateTime? _parseTime(String time) {
     try {
       final parts = time.split(' ');
@@ -98,10 +118,8 @@ class MedicationController extends Notifier<MedicationState> {
     }
   }
 
-  /// Genera un id numérico estable a partir del nombre+hora,
-  /// para poder cancelar ese recordatorio específico después.
   int _stableId(String name, String time) =>
-      ('$name$time'.hashCode).abs() % 100000 + 1000; // rango 1000-100999
+      ('$name$time'.hashCode).abs() % 100000 + 1000;
 }
 
 class MedicationFormController extends Notifier<MedicationFormState> {

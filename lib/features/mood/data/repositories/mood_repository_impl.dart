@@ -4,10 +4,15 @@ import '../../../../core/error/failures.dart';
 import '../../domain/entities/mood_entity.dart';
 import '../../domain/repositories/mood_repository.dart';
 import '../datasources/mood_local_datasource.dart';
+import '../datasources/mood_remote_datasource.dart';
 
 class MoodRepositoryImpl implements MoodRepository {
   final MoodLocalDatasource localDatasource;
-  const MoodRepositoryImpl({required this.localDatasource});
+  final MoodRemoteDatasource remoteDatasource;
+  const MoodRepositoryImpl({
+    required this.localDatasource,
+    required this.remoteDatasource,
+  });
 
   @override
   Future<Either<Failure, void>> logMood({
@@ -17,12 +22,21 @@ class MoodRepositoryImpl implements MoodRepository {
   }) async {
     try {
       await localDatasource.saveMood(userId, mood, note);
-      return const Right(null);
     } on DatabaseException catch (e) {
       return Left(DatabaseFailure(e.message));
     } catch (e) {
       return Left(UnexpectedFailure(e.toString()));
     }
+
+    // Sincronizar con backend
+    try {
+      final today = DateTime.now().toIso8601String().split('T').first;
+      await remoteDatasource.logMood(mood.dbValue, today, note: note);
+    } catch (_) {
+      // Error silencioso: los datos ya están guardados localmente
+    }
+
+    return const Right(null);
   }
 
   @override

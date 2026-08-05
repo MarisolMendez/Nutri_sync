@@ -6,6 +6,7 @@ class UserEntity extends Equatable {
   final String id;
   final String email;
   final String name;
+  final String role;
   final String? photoUrl;
   final double? weightKg;
   final double? heightCm;
@@ -16,6 +17,7 @@ class UserEntity extends Equatable {
     required this.id,
     required this.email,
     required this.name,
+    this.role = 'patient',
     this.photoUrl,
     this.weightKg,
     this.heightCm,
@@ -28,6 +30,7 @@ class UserEntity extends Equatable {
         id,
         email,
         name,
+        role,
         photoUrl,
         weightKg,
         heightCm,

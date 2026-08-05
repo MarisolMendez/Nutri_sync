@@ -8,6 +8,7 @@ class UserModel extends UserEntity {
     required super.id,
     required super.email,
     required super.name,
+    super.role,
     super.photoUrl,
     super.weightKg,
     super.heightCm,

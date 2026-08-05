@@ -55,7 +55,9 @@ class _VoiceNoteRecorderState extends State<VoiceNoteRecorder> {
     final path =
         '${dir.path}/voice_note_${DateTime.now().millisecondsSinceEpoch}.m4a';
 
-    await _recorder.start(const RecordConfig(), path: path);
+    await _recorder.start(
+        const RecordConfig(encoder: AudioEncoder.aacLc, bitRate: 128000),
+        path: path);
 
     setState(() {
       _isRecording = true;

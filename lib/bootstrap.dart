@@ -1,53 +1,42 @@
 import 'dart:async';
 
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 import 'core/config/app_config.dart';
 import 'core/di/providers.dart';
 import 'core/database/app_database.dart';
 import 'core/database/seed_data.dart';
-import 'core/notifications/firebase_background_handler.dart';
+import 'core/network/auth_interceptor.dart';
 import 'core/notifications/notification_service.dart';
 import 'core/router/app_router.dart';
 import 'core/sync/sync_manager.dart';
 import 'core/theme/app_theme.dart';
-import 'firebase_options.dart';
 
 Future<void> bootstrap() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await initializeDateFormatting('es', null);
 
-  // ─── Firebase (solo si el feature flag está activo) ───────────
-  if (AppConfig.useFirebase) {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-
-    // Registra el handler de background ANTES de cualquier otra cosa de FCM
-    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-  }
+  // Firebase desactivado — usando backend propio
+  // (ver AppConfig.useFirebase)
 
   await initDependencies();
 
   // Datos de ejemplo — comidas para visualizar el plan
   await seedSampleData(sl<AppDatabase>());
 
-  // Notificaciones — inicializa canales y pide permisos
+  // Notificaciones — siempre (funciona sin Firebase)
   await sl<NotificationService>().init();
 
-  // SyncManager — empieza a escuchar conectividad
-  sl<SyncManager>().init();
-
-  // Notificación de prueba inmediata para verificar permisos
-  unawaited(sl<NotificationService>().sendTestNotification());
-
-  // Recordatorios de hidratación cada 2h entre 8am y 10pm
-  unawaited(sl<NotificationService>().scheduleHydrationReminders(intervalHours: 2));
+  // SyncManager — solo con Firebase
+  if (AppConfig.useFirebase) {
+    sl<SyncManager>().init();
+    unawaited(sl<NotificationService>().sendTestNotification());
+    unawaited(sl<NotificationService>().scheduleHydrationReminders(intervalHours: 2));
+  }
 
   runApp(
     const ProviderScope(
@@ -56,8 +45,52 @@ Future<void> bootstrap() async {
   );
 }
 
-class NutriSyncApp extends StatelessWidget {
+class NutriSyncApp extends StatefulWidget {
   const NutriSyncApp({super.key});
+
+  @override
+  State<NutriSyncApp> createState() => _NutriSyncAppState();
+}
+
+class _NutriSyncAppState extends State<NutriSyncApp>
+    with WidgetsBindingObserver {
+  bool _wasInBackground = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+
+    // Redirigir automáticamente al login cuando el backend responda 401 (token expirado/inválido)
+    AuthInterceptor.onSessionExpired = () {
+      AppRouter.router.go('/login');
+    };
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      _wasInBackground = true;
+    } else if (state == AppLifecycleState.resumed && _wasInBackground) {
+      _wasInBackground = false;
+      _checkSessionOnResume();
+    }
+  }
+
+  Future<void> _checkSessionOnResume() async {
+    final hasToken = await AuthInterceptor.hasValidToken();
+    if (!hasToken && mounted) {
+      // Navegar a login solo si volvió de background y no hay sesión
+      final router = GoRouter.of(context);
+      router.go('/auth/login');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

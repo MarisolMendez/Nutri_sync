@@ -190,6 +190,7 @@ class _DashboardContent extends ConsumerWidget {
                     key: ValueKey(meal.id),
                     meal: meal,
                     showDetailsButton: false,
+                    isToday: true,
                     onToggleConsumed: () => ref
                         .read(dashboardControllerProvider.notifier)
                         .toggleMealConsumed(meal),
@@ -231,6 +232,42 @@ class _DashboardContent extends ConsumerWidget {
   }
 }
 
+// ── Vista de mood guardado ──────────────────────────────────────────────────
+
+class _MoodSavedDisplay extends StatelessWidget {
+  final MoodValue? mood;
+  const _MoodSavedDisplay({this.mood});
+
+  @override
+  Widget build(BuildContext context) {
+    if (mood == null) return const SizedBox.shrink();
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: NutriColors.primary.withValues(alpha: 0.06),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            children: [
+              Text(mood!.emoji, style: const TextStyle(fontSize: 48)),
+              const SizedBox(height: 8),
+              Text(
+                mood!.label,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: NutriColors.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 // ── Card Hidratación ──────────────────────────────────────────────────────────
 
 class _HydrationCard extends StatelessWidget {
@@ -262,13 +299,29 @@ class _HydrationCard extends StatelessWidget {
                       style: Theme.of(context).textTheme.titleMedium),
                 ],
               ),
-              TextButton(
-                onPressed: onAddTap,
-                style: TextButton.styleFrom(
-                    foregroundColor: NutriColors.primary,
-                    padding: EdgeInsets.zero),
-                child: const Text('+ Agregar'),
-              ),
+              if (hydration.totalMl >= hydration.goalMl)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: NutriColors.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    'Meta alcanzada',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: NutriColors.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                )
+              else
+                TextButton(
+                  onPressed: onAddTap,
+                  style: TextButton.styleFrom(
+                      foregroundColor: NutriColors.primary,
+                      padding: EdgeInsets.zero),
+                  child: const Text('+ Agregar'),
+                ),
             ],
           ),
           const SizedBox(height: 4),
@@ -604,71 +657,100 @@ class _MoodSectionState extends State<_MoodSection> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: MoodValue.values.map((mood) {
-              final isSelected = _selected == mood;
-              return GestureDetector(
-                onTap: alreadySaved
-                    ? null
-                    : () => setState(() => _selected = mood),
-                child: Column(
-                  children: [
-                    Container(
-                      width: 52,
-                      height: 52,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: isSelected
-                            ? Border.all(color: NutriColors.primary, width: 2)
-                            : null,
-                        color: isSelected
-                            ? NutriColors.primary.withValues(alpha: 0.08)
-                            : Colors.transparent,
-                      ),
-                      child: Center(
-                        child: Text(mood.emoji,
-                            style: const TextStyle(fontSize: 26)),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      mood.label,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: isSelected
-                                ? NutriColors.primary
-                                : NutriColors.textSecondary,
-                            fontWeight: isSelected
-                                ? FontWeight.w600
-                                : FontWeight.w400,
-                            fontSize: 11,
+          const SizedBox(height: 14),
+          if (alreadySaved)
+            Column(
+              children: [
+                _MoodSavedDisplay(mood: widget.currentMood),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE8F5E9),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFFC8E6C9)),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.check_circle,
+                          size: 18, color: Color(0xFF4CAF50)),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Ya has registrado tu estado de ánimo hoy',
+                          style: TextStyle(
+                            color: Color(0xFF2E7D32),
+                            fontWeight: FontWeight.w500,
+                            fontSize: 13,
                           ),
-                    ),
-                  ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton.icon(
-            onPressed: alreadySaved
-                ? () {}
-                : (_selected != null ? () => widget.onSave(_selected!) : null),
-            icon: Icon(
-              alreadySaved ? Icons.check_circle : Icons.save_outlined,
-              size: 16,
-              color: Colors.white,
+              ],
+            )
+          else ...[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: MoodValue.values.map((mood) {
+                final isSelected = _selected == mood;
+                return GestureDetector(
+                  onTap: () => setState(() => _selected = mood),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 52,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: isSelected
+                              ? Border.all(
+                                  color: NutriColors.primary, width: 2)
+                              : null,
+                          color: isSelected
+                              ? NutriColors.primary.withValues(alpha: 0.08)
+                              : Colors.transparent,
+                        ),
+                        child: Center(
+                          child: Text(mood.emoji,
+                              style: const TextStyle(fontSize: 26)),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        mood.label,
+                        style:
+                            Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: isSelected
+                                      ? NutriColors.primary
+                                      : NutriColors.textSecondary,
+                                  fontWeight: isSelected
+                                      ? FontWeight.w600
+                                      : FontWeight.w400,
+                                  fontSize: 11,
+                                ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
             ),
-            label: Text(
-              alreadySaved ? 'Hoy ya registrado' : 'Guardar registro de hoy',
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: _selected != null
+                  ? () => widget.onSave(_selected!)
+                  : null,
+              icon: const Icon(Icons.save_outlined, size: 16, color: Colors.white),
+              label: const Text('Guardar registro de hoy'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: NutriColors.primary,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(double.infinity, 42),
+              ),
             ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: NutriColors.primary,
-              foregroundColor: Colors.white,
-              minimumSize: const Size(double.infinity, 42),
-            ),
-          ),
+          ],
         ],
       ),
     );

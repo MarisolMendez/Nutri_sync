@@ -1,9 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/database/daos/user_dao.dart';
 import '../../../../core/di/providers.dart';
-import '../../../../core/usecases/usecase.dart';
-import '../../../auth/domain/usecases/get_current_user_usecase.dart';
-import '../../domain/usecases/get_profile_usecase.dart';
+import '../../../../core/network/api_client.dart';
+import '../../../../core/network/api_endpoints.dart';
+import '../../../auth/presentation/controllers/auth_controller.dart';
+import '../../../auth/presentation/controllers/auth_state.dart';
+import '../../domain/entities/profile_entity.dart';
 import '../../domain/usecases/update_profile_usecase.dart';
 import 'profile_state.dart';
 
@@ -13,72 +14,53 @@ final profileControllerProvider =
 );
 
 class ProfileController extends Notifier<ProfileState> {
-  late final GetProfileUseCase _getProfile;
   late final UpdateProfileUseCase _updateProfile;
-  late final GetCurrentUserUseCase _getCurrentUser;
-  late final UserDao _userDao;
-
-  static const _tempUserId = 'user_1';
+  late final ApiClient _client;
 
   @override
   ProfileState build() {
-    _getProfile = sl();
     _updateProfile = sl();
-    _getCurrentUser = sl();
-    _userDao = sl();
+    _client = sl();
     return const ProfileInitial();
   }
 
   Future<void> load() async {
     state = const ProfileLoading();
 
-    final result = await _getProfile(
-      const ProfileParams(userId: _tempUserId),
-    );
+    final authState = ref.read(authControllerProvider);
+    if (authState is AuthAuthenticated) {
+      final user = authState.user;
+      double? weightKg;
+      double? heightCm;
+      String? gender;
+      DateTime? dateOfBirth;
 
-    await result.fold(
-      (failure) async => state = ProfileError(failure.message),
-      (profile) async {
-        if (profile == null) {
-          // Fallback: intentar leer el usuario desde SharedPreferences
-          // y sincronizarlo a SQLite automáticamente.
-          await _syncFromSharedPrefs();
-          // Reintentar la carga del perfil desde SQLite
-          final retry = await _getProfile(
-            const ProfileParams(userId: _tempUserId),
-          );
-          retry.fold(
-            (failure) => state = ProfileError(failure.message),
-            (retryProfile) {
-              if (retryProfile == null) {
-                state = const ProfileError('Perfil no encontrado');
-              } else {
-                state = ProfileLoaded(profile: retryProfile);
-              }
-            },
-          );
-        } else {
-          state = ProfileLoaded(profile: profile);
+      try {
+        final response = await _client.get(ApiEndpoints.clinicalRecordMetrics);
+        final body = response.data as Map<String, dynamic>?;
+        if (body?['success'] == true && body?['data'] is Map) {
+          final data = body!['data'] as Map<String, dynamic>;
+          weightKg = num.tryParse(data['weightKg']?.toString() ?? '')?.toDouble();
+          heightCm = num.tryParse(data['heightCm']?.toString() ?? '')?.toDouble();
+          gender = data['sex']?.toString() == 'Masculino' ? 'male' : data['sex']?.toString() == 'Femenino' ? 'female' : null;
+          // dateOfBirth no se guarda actualmente en el ClinicalRecord flat
         }
-      },
-    );
-  }
+      } catch (_) {}
 
-  /// Si el usuario existe en SharedPreferences (AuthLocalDatasource)
-  /// pero no en SQLite, lo sincroniza automáticamente.
-  Future<void> _syncFromSharedPrefs() async {
-    final userResult = await _getCurrentUser(const NoParams());
-    userResult.fold((_) => null, (user) {
-      if (user != null) {
-        _userDao.createOrUpdate(
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          createdAt: user.createdAt,
-          updatedAt: DateTime.now(),
-        );
-      }
-    });
+      state = ProfileLoaded(profile: ProfileEntity(
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        photoUrl: user.photoUrl,
+        weightKg: weightKg,
+        heightCm: heightCm,
+        gender: gender,
+        dateOfBirth: dateOfBirth,
+      ));
+      return;
+    }
+
+    state = const ProfileError('Perfil no encontrado');
   }
 
   void toggleEditing() {
@@ -92,15 +74,34 @@ class ProfileController extends Notifier<ProfileState> {
     required String name,
     double? weightKg,
     double? heightCm,
+    DateTime? dateOfBirth,
+    String? gender,
   }) async {
+    final authState = ref.read(authControllerProvider);
+    if (authState is! AuthAuthenticated) return;
+
+    final user = authState.user;
+
     final result = await _updateProfile(
       UpdateProfileParams(
-        userId: _tempUserId,
+        userId: user.id,
         name: name,
         weightKg: weightKg,
         heightCm: heightCm,
       ),
     );
+
+    if (weightKg != null && heightCm != null && weightKg > 0 && heightCm > 0) {
+      try {
+        await _client.post(ApiEndpoints.clinicalRecordMetrics, data: {
+          'name': name,
+          'weightKg': weightKg,
+          'heightCm': heightCm,
+          'dateOfBirth': dateOfBirth?.toIso8601String(),
+          'gender': gender,
+        });
+      } catch (_) {}
+    }
 
     result.fold(
       (failure) => state = ProfileError(failure.message),

@@ -19,7 +19,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _obscurePassword = true;
-  bool _privacyShown = false;
+  bool _justRegistered = false;
 
   @override
   void dispose() {
@@ -31,6 +31,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   void _onRegister() {
     if (!_formKey.currentState!.validate()) return;
+    _justRegistered = true;
     ref.read(authControllerProvider.notifier).register(
           email: _emailController.text.trim(),
           password: _passwordController.text,
@@ -41,27 +42,29 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     ref.listen<AuthState>(authControllerProvider, (previous, current) {
-      if (current is AuthAuthenticated &&
-          previous is! AuthAuthenticated &&
-          !_privacyShown) {
-        _privacyShown = true;
-        Future.delayed(const Duration(milliseconds: 100), () {
-          if (!mounted) return;
-          showDialog(
-            context: context,
-            barrierDismissible: false,
-            barrierColor: Colors.black54,
-            builder: (dialogContext) => PrivacyConsentOverlay(
-              onAccept: () {
-                Navigator.of(dialogContext).pop();
-                if (!mounted) return;
-                GoRouter.of(context).go('/dashboard');
-              },
-            ),
-          );
-        });
+      // Registro exitoso → redirigir al login
+      if (_justRegistered && current is AuthUnauthenticated) {
+        _justRegistered = false;
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (_) => PrivacyConsentOverlay(
+            onAccept: () {
+              Navigator.of(context).pop(); // cierra el modal de privacidad
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Cuenta creada exitosamente. Inicia sesión cuando tu cuenta sea aprobada.'),
+                  backgroundColor: NutriColors.primary,
+                ),
+              );
+              GoRouter.of(context).go('/login');
+            },
+          ),
+        );
+        return;
       }
       if (current is AuthError) {
+        _justRegistered = false;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(current.message),
@@ -77,7 +80,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Fondo hojas
           Image.asset(
             'assets/images/bg_leaves.png',
             fit: BoxFit.cover,
@@ -124,7 +126,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             style: TextStyle(color: Colors.white70, fontSize: 14),
                           ),
                           const SizedBox(height: 32),
-                          // Card del formulario
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 28),
                             child: Container(
@@ -139,9 +140,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    // Usuario
                                     Text(
-                                      'Usuario',
+                                      'Nombre completo',
                                       style: Theme.of(context)
                                           .textTheme
                                           .bodyMedium
@@ -151,9 +151,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                     TextFormField(
                                       controller: _nameController,
                                       decoration: const InputDecoration(
-                                        hintText: 'exemplo@email.com',
-                                        prefixIcon:
-                                            Icon(Icons.person_outline, size: 18),
+                                        hintText: 'Tu nombre completo',
+                                        prefixIcon: Icon(Icons.person_outline, size: 18),
                                       ),
                                       validator: (v) {
                                         if (v == null || v.isEmpty) {
@@ -163,8 +162,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                       },
                                     ),
                                     const SizedBox(height: 16),
-
-                                    // E-mail
                                     Text(
                                       'E-mail',
                                       style: Theme.of(context)
@@ -177,9 +174,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                       controller: _emailController,
                                       keyboardType: TextInputType.emailAddress,
                                       decoration: const InputDecoration(
-                                        hintText: 'exemplo@email.com',
-                                        prefixIcon:
-                                            Icon(Icons.email_outlined, size: 18),
+                                        hintText: 'ejemplo@email.com',
+                                        prefixIcon: Icon(Icons.email_outlined, size: 18),
                                       ),
                                       validator: (v) {
                                         if (v == null || v.isEmpty) {
@@ -190,8 +186,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                       },
                                     ),
                                     const SizedBox(height: 16),
-
-                                    // Contraseña
                                     Text(
                                       'Contraseña',
                                       style: Theme.of(context)
@@ -205,8 +199,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                       obscureText: _obscurePassword,
                                       decoration: InputDecoration(
                                         hintText: '········',
-                                        prefixIcon:
-                                            const Icon(Icons.lock_outline, size: 18),
+                                        prefixIcon: const Icon(Icons.lock_outline, size: 18),
                                         suffixIcon: IconButton(
                                           icon: Icon(
                                             _obscurePassword
@@ -215,8 +208,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                             size: 18,
                                           ),
                                           onPressed: () => setState(
-                                            () =>
-                                                _obscurePassword = !_obscurePassword,
+                                            () => _obscurePassword = !_obscurePassword,
                                           ),
                                         ),
                                       ),
@@ -229,8 +221,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                       },
                                     ),
                                     const SizedBox(height: 24),
-
-                                    // Botón Entrar
                                     ElevatedButton.icon(
                                       onPressed: isLoading ? null : _onRegister,
                                       icon: isLoading
@@ -243,22 +233,19 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                               ),
                                             )
                                           : const Icon(Icons.arrow_forward, size: 18),
-                                      label: const Text('Entrar'),
+                                      label: const Text('Crear cuenta'),
                                     ),
                                     const SizedBox(height: 14),
-
-                                    // Link iniciar sesión
                                     Center(
                                       child: Row(
                                         mainAxisAlignment: MainAxisAlignment.center,
                                         children: [
                                           Text(
-                                            'Yo tienes cuenta? ',
+                                            '¿Ya tienes cuenta? ',
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .bodySmall
-                                                ?.copyWith(
-                                                    color: NutriColors.textSecondary),
+                                                ?.copyWith(color: NutriColors.textSecondary),
                                           ),
                                           GestureDetector(
                                             onTap: () => context.pop(),

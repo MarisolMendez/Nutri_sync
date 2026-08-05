@@ -11,7 +11,6 @@ final mealPlanControllerProvider =
   MealPlanController.new,
 );
 
-/// Provider for recipe detail state based on a meal entity
 final recipeDetailStateProvider =
     Provider.family<RecipeDetailState, MealEntity>(
   (ref, meal) {
@@ -42,13 +41,11 @@ class MealPlanController extends Notifier<MealPlanState> {
   }
 
   Future<void> load() async {
-    final previousDay = state is MealPlanLoaded
-        ? (state as MealPlanLoaded).selectedDay
-        : DateTime.now().weekday;
+    final previousState = state is MealPlanLoaded ? state as MealPlanLoaded : null;
+    final previousDay = previousState?.selectedDay ?? DateTime.now().weekday;
 
     state = const MealPlanLoading();
 
-    // Lunes de la semana actual
     final now = DateTime.now();
     final monday = now.subtract(Duration(days: now.weekday - 1));
     final weekStart = DateTime(monday.year, monday.month, monday.day);
@@ -63,9 +60,23 @@ class MealPlanController extends Notifier<MealPlanState> {
         if (plan == null) {
           state = const MealPlanEmpty();
         } else {
+          var finalPlan = plan;
+          if (previousState != null) {
+            final mergedMeals = plan.meals.map((newMeal) {
+              final oldMeal = previousState.plan.meals
+                  .where((m) => m.id == newMeal.id)
+                  .firstOrNull;
+              if (oldMeal != null && oldMeal.isConsumed) {
+                return newMeal.copyWith(isConsumed: true);
+              }
+              return newMeal;
+            }).toList();
+            finalPlan = plan.copyWith(meals: mergedMeals);
+          }
+
           state = MealPlanLoaded(
-            plan: plan,
-            selectedDay: previousDay, // Preserva el día seleccionado
+            plan: finalPlan,
+            selectedDay: previousDay,
           );
         }
       },
@@ -86,13 +97,21 @@ class MealPlanController extends Notifier<MealPlanState> {
       ),
     );
     result.fold(
-      (failure) => state = MealPlanError(failure.message),
-      (_) => load(),
+      (failure) {
+        if (state is MealPlanLoaded) {
+          state = (state as MealPlanLoaded).copyWith(
+            errorMessage: failure.message,
+          );
+        } else {
+          state = MealPlanError(failure.message);
+        }
+      },
+      (_) => _markMealLocally(meal.id, consumed: !meal.isConsumed),
     );
   }
 
   Future<void> saveSubstituteNote({
-    required int mealId,
+    required String mealId,
     String? note,
     String? voiceNotePath,
   }) async {
@@ -106,7 +125,24 @@ class MealPlanController extends Notifier<MealPlanState> {
     );
     result.fold(
       (failure) => state = MealPlanError(failure.message),
-      (_) => load(),
+      (_) => _markMealLocally(mealId, consumed: true, note: note),
+    );
+  }
+
+  void _markMealLocally(String mealId, {bool consumed = true, String? note}) {
+    if (state is! MealPlanLoaded) return;
+    final loaded = state as MealPlanLoaded;
+    final updatedMeals = loaded.plan.meals.map((m) {
+      if (m.id == mealId) {
+        return m.copyWith(
+          isConsumed: consumed,
+          substituteNote: note ?? m.substituteNote,
+        );
+      }
+      return m;
+    }).toList();
+    state = loaded.copyWith(
+      plan: loaded.plan.copyWith(meals: updatedMeals),
     );
   }
 }

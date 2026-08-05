@@ -8,20 +8,10 @@ import '../datasources/auth_local_datasource.dart';
 import '../datasources/auth_remote_datasource.dart';
 import '../models/user_model.dart';
 
-/// Repositorio de autenticación que usa Firebase o backend propio según el flag.
-///
-/// Feature flag: [useFirebase]
-/// - `true`  → Autenticación con FirebaseAuth + caché local
-/// - `false` → Autenticación contra backend propio vía [AuthRemoteDatasource]
-///
-/// ## Migración al backend propio
-/// 1. Tu equipo implementa la API con los endpoints de [ApiEndpoints]
-/// 2. Cambian `AppConfig.useFirebase = false`
-/// 3. ¡Listo!
 class AuthRepositoryImpl implements AuthRepository {
   final AuthLocalDatasource localDatasource;
   final UserDao userDao;
-  final FirebaseAuth firebaseAuth;
+  final FirebaseAuth? firebaseAuth;
   final AuthRemoteDatasource remoteDatasource;
   final bool useFirebase;
   static const _cachedUserId = 'user_1';
@@ -29,7 +19,7 @@ class AuthRepositoryImpl implements AuthRepository {
   const AuthRepositoryImpl({
     required this.localDatasource,
     required this.userDao,
-    required this.firebaseAuth,
+    this.firebaseAuth,
     required this.remoteDatasource,
     required this.useFirebase,
   });
@@ -54,18 +44,14 @@ class AuthRepositoryImpl implements AuthRepository {
     if (useFirebase) {
       return _registerWithFirebase(email: email, password: password, name: name);
     }
-    return _registerWithBackend(
-      email: email,
-      password: password,
-      name: name,
-    );
+    return _registerWithBackend(email: email, password: password, name: name);
   }
 
   @override
   Future<Either<Failure, void>> logout() async {
     try {
       if (useFirebase) {
-        await firebaseAuth.signOut();
+        await firebaseAuth?.signOut();
       } else {
         await remoteDatasource.logout();
       }
@@ -87,14 +73,14 @@ class AuthRepositoryImpl implements AuthRepository {
     }
   }
 
-  // ── Firebase ──────────────────────────────────────────────────────
+  // ── Firebase ──────────────────────────────────────────
 
   Future<Either<Failure, UserEntity>> _loginWithFirebase({
     required String email,
     required String password,
   }) async {
     try {
-      final credential = await firebaseAuth.signInWithEmailAndPassword(
+      final credential = await firebaseAuth!.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
@@ -102,7 +88,6 @@ class AuthRepositoryImpl implements AuthRepository {
       if (firebaseUser == null) {
         return Left(UnexpectedFailure('Error al iniciar sesión'));
       }
-
       final user = UserModel(
         id: firebaseUser.uid,
         email: firebaseUser.email ?? email,
@@ -123,7 +108,7 @@ class AuthRepositoryImpl implements AuthRepository {
     required String name,
   }) async {
     try {
-      final credential = await firebaseAuth.createUserWithEmailAndPassword(
+      final credential = await firebaseAuth!.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
@@ -131,10 +116,8 @@ class AuthRepositoryImpl implements AuthRepository {
       if (firebaseUser == null) {
         return Left(UnexpectedFailure('Error al crear la cuenta'));
       }
-
       await firebaseUser.updateDisplayName(name);
       await firebaseUser.reload();
-
       final user = UserModel(
         id: firebaseUser.uid,
         email: firebaseUser.email ?? email,
@@ -149,7 +132,7 @@ class AuthRepositoryImpl implements AuthRepository {
     }
   }
 
-  // ── Backend propio ────────────────────────────────────────────────
+  // ── Backend propio ────────────────────────────────────
 
   Future<Either<Failure, UserEntity>> _loginWithBackend({
     required String email,
@@ -174,9 +157,9 @@ class AuthRepositoryImpl implements AuthRepository {
     required String name,
   }) async {
     final result = await remoteDatasource.register(
+      name: name,
       email: email,
       password: password,
-      name: name,
     );
     return result.fold(
       (failure) => Left(failure),
@@ -187,7 +170,7 @@ class AuthRepositoryImpl implements AuthRepository {
     );
   }
 
-  // ── Utilidades compartidas ────────────────────────────────────────
+  // ── Utilidades ───────────────────────────────────────
 
   Future<void> _cacheUser(UserModel user) async {
     await localDatasource.cacheUser(user);

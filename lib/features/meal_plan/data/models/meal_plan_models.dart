@@ -25,8 +25,8 @@ class RecipeModel extends RecipeEntity {
     final stepsRaw = jsonDecode(data.stepsJson as String) as List;
 
     return RecipeModel(
-      id: data.id as int,
-      mealId: data.mealId as int,
+      id: data.id as String,
+      mealId: data.mealId as String,
       title: data.title as String,
       imageUrl: data.imageUrl as String?,
       mealTime: data.mealTime as String?,
@@ -59,13 +59,14 @@ class MealModel extends MealEntity {
     super.fatG,
     super.isConsumed,
     super.substituteNote,
+    super.note,
     super.recipe,
   });
 
   factory MealModel.fromLocal(dynamic data, {RecipeModel? recipe}) {
     return MealModel(
-      id: data.id as int,
-      weeklyPlanId: data.weeklyPlanId as int,
+      id: data.id as String,
+      weeklyPlanId: data.weeklyPlanId as String,
       dayOfWeek: data.dayOfWeek as int,
       mealType: data.mealType as String,
       name: data.name as String,
@@ -76,6 +77,7 @@ class MealModel extends MealEntity {
       fatG: data.fatG as double?,
       isConsumed: data.isConsumed as bool,
       substituteNote: data.substituteNote as String?,
+      note: data.note as String?,
       recipe: recipe,
     );
   }
@@ -92,7 +94,7 @@ class WeeklyPlanModel extends WeeklyPlanEntity {
 
   factory WeeklyPlanModel.fromLocal(dynamic data, List<MealModel> meals) {
     return WeeklyPlanModel(
-      id: data.id as int,
+      id: data.id as String,
       userId: data.userId as String,
       weekStartDate: data.weekStartDate as DateTime,
       nutritionistNotes: data.nutritionistNotes as String?,

@@ -85,8 +85,12 @@ class AuthController extends Notifier<AuthState> {
     );
 
     result.fold(
-      (failure) => state = AuthError(failure.message),
-      (user) => state = AuthAuthenticated(user),
+      (failure) {
+        state = AuthError(failure.message);
+      },
+      (_) {
+        state = const AuthUnauthenticated();
+      },
     );
   }
 

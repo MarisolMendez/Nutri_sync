@@ -65,6 +65,7 @@ class _MealPlanContent extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final now = DateTime.now();
     final monday = now.subtract(Duration(days: now.weekday - 1));
+    final isToday = now.weekday == state.selectedDay;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -150,8 +151,10 @@ class _MealPlanContent extends ConsumerWidget {
                   padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
                   itemCount: state.mealsForSelectedDay.length,
                   itemBuilder: (context, i) => MealCard(
+                    key: ValueKey('${state.mealsForSelectedDay[i].id}-${state.mealsForSelectedDay[i].isConsumed}'),
                     meal: state.mealsForSelectedDay[i],
                     showDetailsButton: true,
+                    isToday: isToday,
                   ),
                 ),
         ),
@@ -163,12 +166,14 @@ class _MealPlanContent extends ConsumerWidget {
 class MealCard extends ConsumerStatefulWidget {
   final MealEntity meal;
   final bool showDetailsButton;
+  final bool isToday;
   final VoidCallback? onToggleConsumed;
 
   const MealCard({
     super.key,
     required this.meal,
     this.showDetailsButton = false,
+    this.isToday = false,
     this.onToggleConsumed,
   });
 
@@ -268,7 +273,7 @@ class _MealCardState extends ConsumerState<MealCard> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
-                      child: Text(meal.name,
+                      child: Text(meal.recipe?.title ?? meal.name,
                           style: Theme.of(context).textTheme.titleMedium),
                     ),
                     GestureDetector(
@@ -306,12 +311,11 @@ class _MealCardState extends ConsumerState<MealCard> {
 
                 const SizedBox(height: 16),
 
-                // Botón consumido — con lógica que persiste igual que mood
+                // Botón consumido — solo habilitado si es hoy
                 ElevatedButton.icon(
-                  onPressed: widget.onToggleConsumed ??
-                      () => ref
-                          .read(mealPlanControllerProvider.notifier)
-                          .toggleMealConsumed(meal),
+                  onPressed: (meal.isConsumed || !widget.isToday)
+                      ? null
+                      : () => _showConsumeConfirmation(context, ref, meal, widget.onToggleConsumed),
                   icon: Icon(
                     meal.isConsumed
                         ? Icons.check_circle
@@ -319,7 +323,7 @@ class _MealCardState extends ConsumerState<MealCard> {
                     size: 18,
                   ),
                   label: Text(
-                      meal.isConsumed ? 'Consumido' : 'Registrar como comido'),
+                      meal.isConsumed ? '✓ Comida registrada' : 'Registrar como comido'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: meal.isConsumed
                         ? NutriColors.primary
@@ -343,7 +347,7 @@ class _MealCardState extends ConsumerState<MealCard> {
                                 transitionDuration: const Duration(milliseconds: 260),
                                 reverseTransitionDuration: const Duration(milliseconds: 200),
                                 pageBuilder: (context, animation, secondaryAnimation) =>
-                                    RecipeDetailScreen(meal: meal),
+                                    RecipeDetailScreen(meal: meal, isToday: widget.isToday),
                                 transitionsBuilder: (context, animation, secondaryAnimation, child) {
                                   return SlideTransition(
                                     position: Tween<Offset>(
@@ -374,61 +378,157 @@ class _MealCardState extends ConsumerState<MealCard> {
 
                 const SizedBox(height: 12),
 
-                // No lo voy a comer
-                GestureDetector(
-                  onTap: () =>
-                      setState(() => _showNote = !_showNote),
-                  child: Center(
-                    child: Text(
-                      'No lo voy a comer, ¿Qué comiste?',
-                      style: Theme.of(context).textTheme.bodySmall
-                          ?.copyWith(
-                            color: NutriColors.textPrimary,
-                            fontWeight: FontWeight.w500,
+                // Mensaje para comida ya registrada
+                if (meal.isConsumed)
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE8F5E9),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFFC8E6C9)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.check_circle, size: 18, color: Color(0xFF4CAF50)),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Este alimento ya ha sido registrado',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: const Color(0xFF2E7D32),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
                           ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
 
-                if (_showNote) ...[
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _noteController,
-                    decoration: const InputDecoration(
-                      hintText: 'Ej: He cambiado el salmón por atún...',
+                // Mensaje cuando no es hoy y no está consumido
+                if (!widget.isToday && !meal.isConsumed)
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF3E0),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFFFFE0B2)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.info_outline, size: 18, color: Color(0xFFE65100)),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Solo puedes registrar comidas del día de hoy',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: const Color(0xFFBF360C),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  VoiceNoteRecorder(
-                    onRecorded: (path) => _voiceNotePath = path,
-                  ),
-                  const SizedBox(height: 8),
-                  OutlinedButton.icon(
-                    onPressed: () {
-                      ref
-                          .read(mealPlanControllerProvider.notifier)
-                          .saveSubstituteNote(
-                            mealId: meal.id,
-                            note: _noteController.text.isEmpty
-                                ? null
-                                : _noteController.text,
-                            voiceNotePath: _voiceNotePath,
-                          );
-                      setState(() => _showNote = false);
-                    },
-                    icon: const Icon(Icons.check_circle_outline, size: 14),
-                    label: const Text('Confirmar Comida'),
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size(double.infinity, 44),
-                      foregroundColor: NutriColors.textSecondary,
-                      side: const BorderSide(color: NutriColors.border),
+
+                // No lo voy a comer (solo si es hoy y no está consumido)
+                if (widget.isToday && !meal.isConsumed) ...[
+                  GestureDetector(
+                    onTap: () =>
+                        setState(() => _showNote = !_showNote),
+                    child: Center(
+                      child: Text(
+                        'No lo voy a comer, ¿Qué comiste?',
+                        style: Theme.of(context).textTheme.bodySmall
+                            ?.copyWith(
+                              color: NutriColors.textPrimary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                      ),
                     ),
                   ),
+
+                  if (_showNote) ...[
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _noteController,
+                      decoration: const InputDecoration(
+                        hintText: 'Ej: He cambiado el salmón por atún...',
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    VoiceNoteRecorder(
+                      onRecorded: (path) => _voiceNotePath = path,
+                    ),
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        ref
+                            .read(mealPlanControllerProvider.notifier)
+                            .saveSubstituteNote(
+                              mealId: meal.id,
+                              note: _noteController.text.isEmpty
+                                  ? null
+                                  : _noteController.text,
+                              voiceNotePath: _voiceNotePath,
+                            );
+                        setState(() => _showNote = false);
+                      },
+                      icon: const Icon(Icons.check_circle_outline, size: 14),
+                      label: const Text('Confirmar Comida'),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(double.infinity, 44),
+                        foregroundColor: NutriColors.textSecondary,
+                        side: const BorderSide(color: NutriColors.border),
+                      ),
+                    ),
+                  ],
                 ],
               ],
             ),
           ),
           const SizedBox(height: 4),
+        ],
+      ),
+    );
+  }
+
+  void _showConsumeConfirmation(
+    BuildContext context,
+    WidgetRef ref,
+    MealEntity meal,
+    VoidCallback? onToggleConsumed,
+  ) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('¿Confirmar comida?'),
+        content: const Text(
+          'Una vez marcada como consumida, no podrás deshacer esta acción.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              if (onToggleConsumed != null) {
+                onToggleConsumed();
+              } else {
+                ref
+                    .read(mealPlanControllerProvider.notifier)
+                    .toggleMealConsumed(meal);
+              }
+            },
+            child: const Text('Confirmar'),
+          ),
         ],
       ),
     );

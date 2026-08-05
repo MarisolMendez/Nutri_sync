@@ -16,11 +16,11 @@ class IngredientEntity extends Equatable {
 
 // ── Receta ────────────────────────────────────────────────────────────────────
 class RecipeEntity extends Equatable {
-  final int id;
-  final int mealId;
+  final String id;
+  final String mealId;
   final String title;
   final String? imageUrl;
-  final String? mealTime; // "Desayuno • 08:30 AM"
+  final String? mealTime;
   final List<IngredientEntity> ingredients;
   final List<String> steps;
   final int? calories;
@@ -54,10 +54,10 @@ class RecipeEntity extends Equatable {
 
 // ── Comida del plan ───────────────────────────────────────────────────────────
 class MealEntity extends Equatable {
-  final int id;
-  final int weeklyPlanId;
-  final int dayOfWeek; // 1=Lun ... 7=Dom
-  final String mealType; // breakfast|lunch|dinner|snack
+  final String id;
+  final String weeklyPlanId;
+  final int dayOfWeek;
+  final String mealType;
   final String name;
   final String? imageUrl;
   final int? calories;
@@ -66,6 +66,7 @@ class MealEntity extends Equatable {
   final double? fatG;
   final bool isConsumed;
   final String? substituteNote;
+  final String? note;
   final RecipeEntity? recipe;
 
   const MealEntity({
@@ -81,6 +82,7 @@ class MealEntity extends Equatable {
     this.fatG,
     this.isConsumed = false,
     this.substituteNote,
+    this.note,
     this.recipe,
   });
 
@@ -98,6 +100,7 @@ class MealEntity extends Equatable {
         fatG: fatG,
         isConsumed: isConsumed ?? this.isConsumed,
         substituteNote: substituteNote ?? this.substituteNote,
+        note: note,
         recipe: recipe,
       );
 
@@ -107,7 +110,7 @@ class MealEntity extends Equatable {
 
 // ── Plan semanal ──────────────────────────────────────────────────────────────
 class WeeklyPlanEntity extends Equatable {
-  final int id;
+  final String id;
   final String userId;
   final DateTime weekStartDate;
   final String? nutritionistNotes;
@@ -121,10 +124,18 @@ class WeeklyPlanEntity extends Equatable {
     required this.meals,
   });
 
-  /// Comidas filtradas por día
+  WeeklyPlanEntity copyWith({List<MealEntity>? meals, String? nutritionistNotes}) =>
+      WeeklyPlanEntity(
+        id: id,
+        userId: userId,
+        weekStartDate: weekStartDate,
+        nutritionistNotes: nutritionistNotes ?? this.nutritionistNotes,
+        meals: meals ?? this.meals,
+      );
+
   List<MealEntity> mealsForDay(int dayOfWeek) =>
       meals.where((m) => m.dayOfWeek == dayOfWeek).toList();
 
   @override
-  List<Object?> get props => [id, userId, weekStartDate];
+  List<Object?> get props => [id, userId, weekStartDate, meals, nutritionistNotes];
 }

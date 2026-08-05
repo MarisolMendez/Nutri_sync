@@ -19,6 +19,7 @@ abstract class MedicationRepository {
 
   Future<Either<Failure, void>> deleteMedication({
     required int id,
+    String? remoteId,
   });
 
   Future<Either<Failure, void>> logMedicationTaken({

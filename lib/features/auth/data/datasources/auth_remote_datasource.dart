@@ -1,29 +1,27 @@
+import 'dart:developer';
 import 'package:dartz/dartz.dart';
+import 'package:dio/dio.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/network/auth_interceptor.dart';
 import '../models/user_model.dart';
 
-/// Datasource remoto para autenticación contra el backend propio.
+/// Datasource remoto para autenticación contra el backend NutriSync.
 ///
-/// ⚠️ **PENDIENTE**: Tu equipo debe:
-/// 1. Ajustar el mapeo de la respuesta JSON al [UserModel]
-/// 2. Confirmar que los endpoints en [ApiEndpoints] coincidan con tu API
-/// 3. Manejar errores HTTP específicos (400, 401, 422, 500)
+/// Endpoints usados:
+/// - `POST /v1/auth/login`  → `{ success, data: { accessToken, refreshToken, user } }`
+/// - `POST /v1/auth/refresh` → `{ success, data: { accessToken } }`
+/// - `POST /v1/auth/logout`  → `{ success, data: { message } }`
 ///
-/// ## Flujo esperado de la API:
-/// - `POST /auth/login`  → `{ "token": "jwt...", "user": { "id": "...", "email": "...", "name": "..." } }`
-/// - `POST /auth/register` → `{ "token": "jwt...", "user": { ... } }`
-/// - `POST /auth/logout` → `{ "message": "Sesión cerrada" }`
-/// - `GET /auth/profile` → `{ "user": { ... } }`
+/// El nutriólogo crea pacientes desde el panel web.
+/// El paciente solo inicia sesión (no hay registro público).
 class AuthRemoteDatasource {
   final ApiClient _client;
 
   const AuthRemoteDatasource({required ApiClient client}) : _client = client;
 
-  /// Inicia sesión en el backend.
-  /// Guarda el JWT automáticamente vía [AuthInterceptor].
+  /// Inicia sesión contra el backend.
   Future<Either<Failure, UserModel>> login({
     required String email,
     required String password,
@@ -34,48 +32,27 @@ class AuthRemoteDatasource {
         data: {'email': email, 'password': password},
       );
 
-      final data = response.data as Map<String, dynamic>;
-      final token = data['token'] as String;
+      final body = response.data as Map<String, dynamic>;
+
+      if (body['success'] != true) {
+        final message = body['error']?['message'] ?? 'Credenciales inválidas';
+        return Left(UnexpectedFailure(message.toString()));
+      }
+
+      final data = body['data'] as Map<String, dynamic>;
+      final accessToken = data['accessToken'] as String;
+      final refreshToken = data['refreshToken'] as String;
       final userJson = data['user'] as Map<String, dynamic>;
 
-      // Guardar JWT para futuros requests
-      await AuthInterceptor.saveToken(token);
+      // Guardar tokens
+      await AuthInterceptor.saveToken(accessToken);
+      await AuthInterceptor.saveRefreshToken(refreshToken);
 
-      // ⚠️ TODO: Ajustar factory si el JSON de tu API es diferente
       final user = UserModel.fromJson({
-        ...userJson,
-        'createdAt': userJson['createdAt'] ?? DateTime.now().toIso8601String(),
-      });
-
-      return Right(user);
-    } on Exception catch (e) {
-      return Left(UnexpectedFailure(_mapError(e)));
-    }
-  }
-
-  /// Registra un nuevo usuario en el backend.
-  /// Guarda el JWT automáticamente vía [AuthInterceptor].
-  Future<Either<Failure, UserModel>> register({
-    required String email,
-    required String password,
-    required String name,
-  }) async {
-    try {
-      final response = await _client.post(
-        ApiEndpoints.register,
-        data: {'email': email, 'password': password, 'name': name},
-      );
-
-      final data = response.data as Map<String, dynamic>;
-      final token = data['token'] as String;
-      final userJson = data['user'] as Map<String, dynamic>;
-
-      // Guardar JWT para futuros requests
-      await AuthInterceptor.saveToken(token);
-
-      // ⚠️ TODO: Ajustar factory si el JSON de tu API es diferente
-      final user = UserModel.fromJson({
-        ...userJson,
+        'id': userJson['id'] as String,
+        'email': userJson['email'] as String,
+        'name': userJson['name'] as String,
+        'role': userJson['role'] as String? ?? 'patient',
         'createdAt': userJson['createdAt'] ?? DateTime.now().toIso8601String(),
       });
 
@@ -90,36 +67,107 @@ class AuthRemoteDatasource {
     try {
       await _client.post(ApiEndpoints.logout);
     } catch (_) {
-      // Ignorar error si el backend no responde — igual limpiamos token
+      // Ignorar error — igual limpiamos token
     } finally {
       await AuthInterceptor.clearToken();
     }
     return const Right(null);
   }
 
-  /// Obtiene el perfil del usuario actual desde el backend.
-  Future<Either<Failure, UserModel?>> getProfile() async {
+  /// Registra un nuevo paciente.
+  Future<Either<Failure, UserModel>> register({
+    required String name,
+    required String email,
+    required String password,
+  }) async {
     try {
-      final response = await _client.get(ApiEndpoints.profile);
-      final data = response.data as Map<String, dynamic>;
-      final userJson = data['user'] as Map<String, dynamic>?;
+      log('REGISTER DATA: name="$name", email="$email", password=${password.length} chars');
+      final response = await _client.post(
+        ApiEndpoints.register,
+        data: {'name': name, 'email': email, 'password': password},
+      );
 
-      if (userJson == null) return const Right(null);
+      final body = response.data as Map<String, dynamic>;
 
-      return Right(UserModel.fromJson({
-        ...userJson,
+      if (body['success'] != true) {
+        final message = body['error']?['message'] ?? 'Error al crear la cuenta';
+        return Left(UnexpectedFailure(message.toString()));
+      }
+
+      // El registro no devuelve tokens — solo datos del usuario
+      final userJson = body['data'] as Map<String, dynamic>;
+
+      final user = UserModel.fromJson({
+        'id': userJson['id'] as String,
+        'email': userJson['email'] as String,
+        'name': userJson['name'] as String,
+        'role': userJson['role'] as String? ?? 'patient',
         'createdAt': userJson['createdAt'] ?? DateTime.now().toIso8601String(),
-      }));
+      });
+
+      return Right(user);
     } on Exception catch (e) {
       return Left(UnexpectedFailure(_mapError(e)));
     }
   }
 
+  /// Obtiene el perfil del usuario actual (placeholder).
+  Future<Either<Failure, UserModel?>> getProfile() async {
+    return const Right(null);
+  }
+
   /// Traduce errores HTTP a mensajes legibles.
   String _mapError(Exception e) {
-    // ⚠️ TODO: Mapear códigos HTTP específicos de tu backend
-    // Ej: 401 → "Credenciales inválidas"
-    // Ej: 422 → "El correo ya está registrado"
-    return e.toString();
+    if (e is DioException) {
+      final statusCode = e.response?.statusCode;
+      if (statusCode == 409) {
+        final serverMessage =
+            (e.response?.data as Map<String, dynamic>?)?['error']?['message'];
+        return (serverMessage is String && serverMessage.isNotEmpty)
+            ? serverMessage
+            : 'Este correo ya está registrado';
+      }
+      if (statusCode == 401) {
+        final serverMessage =
+            (e.response?.data as Map<String, dynamic>?)?['error']?['message'];
+        return (serverMessage is String && serverMessage.isNotEmpty)
+            ? serverMessage
+            : 'Credenciales inválidas';
+      }
+      if (statusCode != null && statusCode >= 500) {
+        return 'Error del servidor, inténtalo de nuevo';
+      }
+
+      // Errores de conectividad
+      switch (e.type) {
+        case DioExceptionType.connectionTimeout:
+        case DioExceptionType.sendTimeout:
+        case DioExceptionType.receiveTimeout:
+        case DioExceptionType.connectionError:
+          return 'Error de conexión, inténtalo de nuevo';
+        default:
+          break;
+      }
+
+      // Intentar leer el mensaje del servidor para cualquier otro código de error
+      if (e.response?.data != null) {
+        final body = e.response!.data;
+        if (body is Map<String, dynamic>) {
+          final serverMessage = body['error']?['message'] ?? body['message'];
+          if (serverMessage is String && serverMessage.isNotEmpty) {
+            return serverMessage;
+          }
+        }
+      }
+
+      // Sin respuesta = servidor no alcanzable
+      if (e.response == null) {
+        return 'Error de conexión, inténtalo de nuevo';
+      }
+
+      return 'Error de conexión, inténtalo de nuevo';
+    }
+
+    return 'Error de conexión, inténtalo de nuevo';
   }
 }
